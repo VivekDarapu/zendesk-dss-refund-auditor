@@ -1,0 +1,37 @@
+{
+  "name": "DSS Refund Auditor",
+  "author": {
+    "name": "Your Organization",
+    "email": "support@example.com"
+  },
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "parameters": [
+    {
+      "name": "external_api_url",
+      "type": "text",
+      "required": false,
+      "secure": false,
+      "default": ""
+    },
+    {
+      "name": "external_api_key",
+      "type": "text",
+      "required": false,
+      "secure": true,
+      "default": ""
+    }
+  ],
+  "domainWhitelist": [],
+  "singleInstall": false
+}
