@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "DSS Refund Auditor",
+    "description": "Zendesk sidebar app for DSS-based refund compliance auditing.",
+    "short_description": "Run DSS audits on Zendesk tickets",
+    "installation_instructions": "Install via ZCLI or manual ZIP upload. Configure DSS rules in dss_grid.json."
+  },
+  "audit": {
+    "run_button": "Run Audit",
+    "run_and_send_button": "Run & Send (optional)",
+    "running": "Running audit...",
+    "success": "Audit completed successfully",
+    "error": "Audit failed",
+    "no_data": "No ticket data available"
+  },
+  "results": {
+    "verdict": "Verdict",
+    "scenario": "Scenario",
+    "refund_type": "Refund Type",
+    "severity": "Severity",
+    "confidence": "Confidence",
+    "compliant": "Compliant",
+    "non_compliant": "Non-Compliant"
+  },
+  "errors": {
+    "missing_grid": "DSS decision grid not found",
+    "invalid_grid": "Invalid DSS decision grid format",
+    "api_error": "External API validation failed",
+    "network_error": "Network error occurred"
+  }
+}
