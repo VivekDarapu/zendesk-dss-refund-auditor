@@ -1,5 +1,7 @@
 /* app.js - DSS Refund Auditor Logic (Standalone & sidebar compatible) */
 (function() {
+    // Google Sheets Proxy URL
+    const GOOGLE_SHEETS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec';
   // Try to detect Zendesk context and ZAFClient
   let client = null;
   let inZendesk = false;
@@ -247,8 +249,22 @@
       else console.log('[AUDIT]', outputJson);
       logStatus('Audit complete! ✓');
       if (sendExternal) {
-        logStatus('External validation not configured.');
-      }
+      logStatus('Sending to Google Sheets...');
+      try {
+        const response = await fetch(GOOGLE_SHEETS_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(outputJson)
+        });
+        if (response.ok) {
+          logStatus('✓ Sent to Google Sheets successfully!');
+        } else {
+          logStatus('Failed to send to Google Sheets: ' + response.statusText);
+        }
+      } catch (err) {
+        console.error('Google Sheets error:', err);
+        logStatus('Error sending to Google Sheets: ' + err.message);
+      }      }
     } catch (err) {
       console.error(err);
       logStatus('Error: ' + (err.message || err));
