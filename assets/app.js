@@ -1,12 +1,28 @@
-/* app.js - DSS Refund Auditor Logic */
+/* app.js - DSS Refund Auditor Logic (Standalone & sidebar compatible) */
 (function() {
-  const client = ZAFClient.init();
+  // Try to detect Zendesk context and ZAFClient
+  let client = null;
+  let inZendesk = false;
+  if (typeof ZAFClient !== 'undefined' && typeof ZAFClient.init === 'function') {
+    try {
+      client = ZAFClient.init();
+      inZendesk = true;
+    } catch (e) {
+      client = null;
+      inZendesk = false;
+    }
+  }
+
+  // DOM Elements
   const statusEl = document.getElementById('status');
   const outputEl = document.getElementById('output');
   const runBtn = document.getElementById('run');
   const runAndSendBtn = document.getElementById('runAndSend');
 
-  function logStatus(s) { statusEl.textContent = s; }
+  function logStatus(s) {
+    if (statusEl) statusEl.textContent = s;
+    else console.log('[STATUS]', s);
+  }
 
   // Load DSS grid from assets
   async function loadGrid() {
@@ -20,141 +36,126 @@
     }
   }
 
-  // Extract ticket data and context
+  // Extract ticket data/context - supports standalone mode
   async function gatherInputs() {
-    try {
-      const ticketData = await client.get('ticket');
-      const ticket = ticketData.ticket;
-      
-      // Get comments
-      let latestComment = '';
+    if (inZendesk && client) {
+      // Zendesk environment
       try {
-        const commentsResp = await client.request(`/api/v2/tickets/${ticket.id}/comments.json`);
-        if (commentsResp && commentsResp.comments && commentsResp.comments.length > 0) {
-          const lastComment = commentsResp.comments[commentsResp.comments.length - 1];
-          latestComment = lastComment.plain_body || lastComment.body || '';
+        const ticketData = await client.get('ticket');
+        const ticket = ticketData.ticket;
+        // Get comments
+        let latestComment = '';
+        try {
+          const commentsResp = await client.request(`/api/v2/tickets/${ticket.id}/comments.json`);
+          if (commentsResp && commentsResp.comments && commentsResp.comments.length > 0) {
+            const lastComment = commentsResp.comments[commentsResp.comments.length - 1];
+            latestComment = lastComment.plain_body || lastComment.body || '';
+          }
+        } catch (e) {
+          console.warn('Could not fetch comments:', e);
         }
-      } catch (e) {
-        console.warn('Could not fetch comments:', e);
+        // Extract booking ID
+        const bookingId = (ticket.subject && ticket.subject.match(/\d{4,}/))
+          ? ticket.subject.match(/\d{4,}/)[0] : ticket.id.toString();
+        // Experience type from custom fields
+        let experienceType = 'Unknown';
+        if (ticket.customField) {
+          const expField = Object.entries(ticket.customField || {}).find(([key, val]) =>
+            key.toLowerCase().includes('experience') || key.toLowerCase().includes('type')
+          );
+          if (expField) experienceType = expField[1] || 'Unknown';
+        }
+        return {
+          bookingId,
+          ticketId: ticket.id,
+          subject: ticket.subject || '',
+          latestComment: latestComment.slice(0, 3000),
+          experienceType,
+          ticketStatus: ticket.status || 'unknown'
+        };
+      } catch (err) {
+        logStatus('Error gathering inputs: ' + err.message);
+        throw err;
       }
-
-      // Extract booking ID from subject or custom field
-      const bookingId = (ticket.subject && ticket.subject.match(/\d{4,}/)) 
-        ? ticket.subject.match(/\d{4,}/)[0] 
-        : ticket.id.toString();
-
-      // Get experience type from custom fields
-      let experienceType = 'Unknown';
-      if (ticket.customField) {
-        // Try to find experience type field
-        const expField = Object.entries(ticket.customField || {}).find(([key, val]) => 
-          key.toLowerCase().includes('experience') || key.toLowerCase().includes('type')
-        );
-        if (expField) experienceType = expField[1] || 'Unknown';
-      }
-
+    } else {
+      // Standalone: Prompt user for required info
+      let subject = prompt('Enter subject (or some ticket details):', '');
+      let latestComment = prompt('Enter the latest comment from the ticket:', '');
+      let experienceType = prompt('Enter experience type (Partnered/Non-Partnered/Social...):', '');
+      let ticketId = Math.floor(Math.random() * 1000000).toString();
+      let bookingId = (subject && subject.match(/\d{4,}/)) ? subject.match(/\d{4,}/)[0] : ticketId;
+      let ticketStatus = 'unknown';
       return {
         bookingId,
-        ticketId: ticket.id,
-        subject: ticket.subject || '',
-        latestComment: latestComment.slice(0, 3000),
-        experienceType,
-        ticketStatus: ticket.status || 'unknown'
+        ticketId,
+        subject: subject || '',
+        latestComment: (latestComment || '').slice(0, 3000),
+        experienceType: experienceType || 'Unknown',
+        ticketStatus
       };
-    } catch (err) {
-      logStatus('Error gathering inputs: ' + err.message);
-      throw err;
     }
   }
 
-  // Determine value tier from currency in text
+  // All downstream logic is unchanged, reusing all core functions (detectValueTier, findBestMatch, chooseColumnLetter, etc.)
   function detectValueTier(text) {
     if (!text) return 'Unknown';
-    
-    // Look for USD amounts
     const usdMatch = text.match(/\$\s*([0-9,]+(?:\.[0-9]{1,2})?)/);
     if (usdMatch) {
       const num = parseFloat(usdMatch[1].replace(/,/g,''));
       return num <= 125 ? '≤ USD 125' : '> USD 125';
     }
-    
     const usdMatch2 = text.match(/([\d,]+(?:\.\d{1,2})?)\s*USD/i);
     if (usdMatch2) {
       const num = parseFloat(usdMatch2[1].replace(/,/g,''));
       return num <= 125 ? '≤ USD 125' : '> USD 125';
     }
-    
     return 'Unknown';
   }
 
-  // Find best matching DSS row
   function findBestMatch(grid, inputs) {
     const text = (inputs.latestComment + ' ' + inputs.subject).toLowerCase();
     let best = null;
     let bestScore = 0;
-
     for (const row of grid) {
       let score = 0;
-      
-      // Check keywords
       if (row.keywords && row.keywords.length) {
         for (const k of row.keywords) {
           if (text.includes(k.toLowerCase())) score += 10;
         }
       }
-      
-      // Check L1/L2 substring match
       if (row.L1 && text.includes(row.L1.toLowerCase())) score += 5;
       if (row.L2 && text.includes(row.L2.toLowerCase())) score += 5;
-      
-      if (score > bestScore) {
-        bestScore = score;
-        best = row;
-      }
+      if (score > bestScore) { bestScore = score; best = row; }
     }
-
-    // Fallback to "Unknown" row if available
     if (!best) {
-      const fallback = grid.find(r => 
-        /unknown|other|default/i.test(r.L1 || '') || 
+      const fallback = grid.find(r =>
+        /unknown|other|default/i.test(r.L1 || '') ||
         /unknown|other|default/i.test(r.L2 || '')
       );
       if (fallback) best = fallback;
     }
-
     return best;
   }
 
-  // Choose column letter based on experience type and value tier
   function chooseColumnLetter(experienceType, valueTier) {
     const type = (experienceType || '').trim();
     const vt = (valueTier || '').trim();
-    
-    // Partnered (not social)
     if (/^partnered$/i.test(type) || (/partnered/i.test(type) && !/social/i.test(type))) {
       return vt === '≤ USD 125' ? 'C' : vt === '> USD 125' ? 'D' : 'C';
     }
-    
-    // Non-Partnered (not social)
     if (/^non-?partnered$/i.test(type) || (/non-?partnered/i.test(type) && !/social/i.test(type))) {
       return vt === '≤ USD 125' ? 'E' : vt === '> USD 125' ? 'F' : 'E';
     }
-    
-    // Social Media Partnered
     if (/social.*partnered/i.test(type) || (/social/i.test(type) && /partnered/i.test(type) && !/non/i.test(type))) {
       return vt === '≤ USD 125' ? 'G' : vt === '> USD 125' ? 'H' : 'G';
     }
-    
-    // Social Media Non-Partnered
     if (/social.*non-?partnered/i.test(type) || (/social/i.test(type) && /non-?partnered/i.test(type))) {
       return vt === '≤ USD 125' ? 'I' : vt === '> USD 125' ? 'J' : 'I';
     }
-    
-    // Default: Partnered ≤ USD 125
+    // Default
     return vt === '> USD 125' ? 'D' : 'C';
   }
 
-  // Severity ranking for refund actions
   function severityRank(refundText) {
     const t = (refundText || '').toLowerCase();
     if (/full refund|refund to original|refund \(original method\)/i.test(t)) return 1;
@@ -168,32 +169,22 @@
   function compareSeverity(expectedText, actualText) {
     const exp = severityRank(expectedText);
     const act = severityRank(actualText);
-    
     if (exp === act) return 'Match';
     if (act > exp) return 'Less severe (under-refunded)';
     if (act < exp) return 'More severe (over-refunded)';
     return 'Mismatch';
   }
 
-  // Build output JSON
   function buildOutputJSON(inputs, gridRow, columnLetter, actualActionText) {
     const cellHeaderMap = {
-      C: 'Partnered ≤ USD 125',
-      D: 'Partnered > USD 125',
-      E: 'Non-Partnered ≤ USD 125',
-      F: 'Non-Partnered > USD 125',
-      G: 'Social Media Partnered ≤ USD 125',
-      H: 'Social Media Partnered > USD 125',
-      I: 'Social Media Non-Partnered ≤ USD 125',
-      J: 'Social Media Non-Partnered > USD 125'
+      C: 'Partnered ≤ USD 125', D: 'Partnered > USD 125',
+      E: 'Non-Partnered ≤ USD 125', F: 'Non-Partnered > USD 125',
+      G: 'Social Media Partnered ≤ USD 125', H: 'Social Media Partnered > USD 125',
+      I: 'Social Media Non-Partnered ≤ USD 125', J: 'Social Media Non-Partnered > USD 125'
     };
-    
     const expectedCellText = gridRow ? (gridRow[columnLetter] || '') : '';
-
-    // Determine refund type verdict
     let refundTypeVerdict = 'Unknown';
     const refundText = actualActionText || '';
-    
     if (/refund to original|full refund/i.test(refundText)) {
       refundTypeVerdict = 'Full refund (original method)';
     } else if (/partial refund|% refund/i.test(refundText)) {
@@ -205,9 +196,7 @@
     } else if (/no refund|deny refund/i.test(refundText)) {
       refundTypeVerdict = 'No refund';
     }
-
     const severityComparison = compareSeverity(expectedCellText, actualActionText);
-    
     let complianceFlag = '';
     if (severityComparison === 'Match' || severityComparison === 'Less severe (under-refunded)') {
       complianceFlag = 'Compliant';
@@ -216,7 +205,6 @@
     } else {
       complianceFlag = 'Non-Compliant (DSS Rule Misapplied)';
     }
-
     return {
       'Booking ID': inputs.bookingId || inputs.ticketId || '',
       'Week': new Date().toISOString().slice(0, 10),
@@ -245,38 +233,36 @@
     try {
       logStatus('Loading DSS grid...');
       const grid = await loadGrid();
-      
       logStatus('Gathering ticket data...');
       const inputs = await gatherInputs();
-      
       // Detect value tier
       inputs.valueTier = detectValueTier(inputs.latestComment + ' ' + inputs.subject);
-      
       logStatus('Finding best DSS match...');
       const matchRow = findBestMatch(grid, inputs);
       const col = chooseColumnLetter(inputs.experienceType, inputs.valueTier);
-      
-      // Extract actual refund action from comment
+      // Extract refund action
       const refundSentence = (inputs.latestComment.match(/(refund.*?(\.|$))/i) || [])[0] || '';
-      
       const outputJson = buildOutputJSON(inputs, matchRow || {}, col, refundSentence || '');
-      
-      // Display output
-      outputEl.textContent = JSON.stringify(outputJson, null, 2);
+      if (outputEl) outputEl.textContent = JSON.stringify(outputJson, null, 2);
+      else console.log('[AUDIT]', outputJson);
       logStatus('Audit complete! ✓');
-      
       if (sendExternal) {
         logStatus('External validation not configured.');
       }
     } catch (err) {
       console.error(err);
       logStatus('Error: ' + (err.message || err));
-      outputEl.textContent = 'Error: ' + (err.message || err);
+      if (outputEl) outputEl.textContent = 'Error: ' + (err.message || err);
+      else alert(err.message || err);
     }
   }
 
-  // Wire button events
-  runBtn.addEventListener('click', () => runAudit(false));
-  runAndSendBtn.addEventListener('click', () => runAudit(true));
+  // Wire up buttons if present
+  if (runBtn) runBtn.addEventListener('click', () => runAudit(false));
+  if (runAndSendBtn) runAndSendBtn.addEventListener('click', () => runAudit(true));
 
+  // Optionally auto-run in standalone (if not in Zendesk & not started from UI)
+  if (!inZendesk && !runBtn && !runAndSendBtn) {
+    runAudit();
+  }
 })();
