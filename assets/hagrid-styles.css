@@ -1,0 +1,383 @@
+/* Hagrid - Apple-level Design System */
+/* Integrates DSS Refund Auditor + Tour Deadline Monitor */
+
+:root {
+  /* Color Palette - Apple-inspired */
+  --hagrid-primary: #007AFF;
+  --hagrid-secondary: #5856D6;
+  --hagrid-success: #34C759;
+  --hagrid-warning: #FF9500;
+  --hagrid-danger: #FF3B30;
+  
+  /* Neutrals */
+  --hagrid-bg: #FFFFFF;
+  --hagrid-surface: #F5F5F7;
+  --hagrid-surface-elevated: #FFFFFF;
+  --hagrid-border: rgba(0, 0, 0, 0.1);
+  --hagrid-text-primary: #1D1D1F;
+  --hagrid-text-secondary: #6E6E73;
+  --hagrid-text-tertiary: #86868B;
+  
+  /* Gradient Colors */
+  --hagrid-gradient-start: rgba(88, 86, 214, 0.1);
+  --hagrid-gradient-end: rgba(0, 122, 255, 0.1);
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Typography */
+  --font-primary: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 17px;
+  --font-size-xl: 22px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  color: var(--hagrid-text-primary);
+  background: var(--hagrid-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Main Container */
+#hagrid-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--hagrid-surface);
+}
+
+/* Tour Deadline Section - Fixed at Top */
+#tour-deadline-section {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--hagrid-gradient-start), var(--hagrid-gradient-end));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--hagrid-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.tour-deadline-card {
+  background: var(--hagrid-surface-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+}
+
+.tour-deadline-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.tour-deadline-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.tour-deadline-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--hagrid-primary), var(--hagrid-secondary));
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.tour-deadline-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--hagrid-text-primary);
+}
+
+.tour-deadline-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.deadline-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--hagrid-border);
+}
+
+.deadline-row:last-child {
+  border-bottom: none;
+}
+
+.deadline-label {
+  font-size: var(--font-size-sm);
+  color: var(--hagrid-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.deadline-value {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--hagrid-text-primary);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.passed {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--hagrid-danger);
+}
+
+.status-badge.approaching {
+  background: rgba(255, 149, 0, 0.1);
+  color: var(--hagrid-warning);
+}
+
+.status-badge.safe {
+  background: rgba(52, 199, 89, 0.1);
+  color: var(--hagrid-success);
+}
+
+/* DSS Refund Auditor Section - Scrollable */
+#dss-auditor-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  background: var(--hagrid-surface);
+}
+
+/* Smooth Scrolling */
+#dss-auditor-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+#dss-auditor-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#dss-auditor-section::-webkit-scrollbar-thumb {
+  background: var(--hagrid-border);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+#dss-auditor-section::-webkit-scrollbar-thumb:hover {
+  background: var(--hagrid-text-tertiary);
+}
+
+/* Audit Card */
+.audit-card {
+  background: var(--hagrid-surface-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.audit-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--hagrid-border);
+}
+
+.audit-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--hagrid-text-primary);
+}
+
+.audit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.grid-cell {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--hagrid-surface);
+}
+
+.grid-cell-label {
+  font-size: var(--font-size-xs);
+  color: var(--hagrid-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.grid-cell-value {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--hagrid-text-primary);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--hagrid-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0051D5;
+  transform: scale(1.02);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--hagrid-border);
+  border-top-color: var(--hagrid-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Alert Messages */
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.alert-info {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--hagrid-primary);
+  border-left: 4px solid var(--hagrid-primary);
+}
+
+.alert-warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: var(--hagrid-warning);
+  border-left: 4px solid var(--hagrid-warning);
+}
+
+.alert-danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--hagrid-danger);
+  border-left: 4px solid var(--hagrid-danger);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+  }
+  
+  .audit-grid {
+    grid-template-columns: 1fr;
+  }
+}
