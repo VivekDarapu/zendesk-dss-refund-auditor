@@ -13,6 +13,10 @@
       client = null;
       inZendesk = false;
     }
+          // Initialize Tour Deadline Monitor
+    if (client && typeof initTourDeadlineMonitor === 'function') {
+      initTourDeadlineMonitor(client);
+    }
   }
 
   // DOM Elements
