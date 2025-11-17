@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "DSS Refund Auditor",
-    "description": "Zendesk sidebar app for DSS-based refund compliance auditing.",
+        "name": "Hagrid",
+        "description": "Hagrid: Combined DSS Refund Auditor + Tour Deadline Monitor for Zendesk",
     "short_description": "Run DSS audits on Zendesk tickets",
     "installation_instructions": "Install via ZCLI or manual ZIP upload. Configure DSS rules in dss_grid.json."
   },
