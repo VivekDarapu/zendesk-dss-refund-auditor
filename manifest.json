@@ -1,5 +1,5 @@
 {
-  "name": "Hagrid",  "author": {
+  "name": "Hagrid", "author": {
     "name": "Your Organization",
     "email": "support@example.com"
   },
@@ -11,20 +11,44 @@
         "url": "assets/iframe.html",
         "flexible": true
       }
+    },
+    "background": {
+      "url": "assets/auto-trigger-iframe.html"
     }
   },
   "defaultLocale": "en",
   "private": true,
   "parameters": [
     {
-      "name": "external_api_url",
+      "name": "googleGeminiApiKey",
       "type": "text",
       "required": false,
-      "secure": false,
+      "secure": true,
       "default": ""
     },
     {
-      "name": "external_api_key",
+      "name": "huggingfaceApiKey",
+      "type": "text",
+      "required": false,
+      "secure": true,
+      "default": ""
+    },
+    {
+      "name": "serviceAccountEmail",
+      "type": "text",
+      "required": false,
+      "secure": true,
+      "default": ""
+    },
+    {
+      "name": "serviceAccountKey",
+      "type": "text",
+      "required": false,
+      "secure": true,
+      "default": ""
+    },
+    {
+      "name": "googleSheetsProxyUrl",
       "type": "text",
       "required": false,
       "secure": true,
