@@ -1,6 +1,6 @@
-# Zendesk DSS Refund Auditor
+# Hagrid
 
-> **Zendesk sidebar app for DSS-based refund compliance auditing**
+> **Hagrid: Combined DSS Refund Auditor + Tour Deadline Monitor for Zendesk**
 
 Runs decision logic locally in ZAF iframe using a JSON decision grid extracted from your Backup logic.pdf. No external backend required—100% deterministic matching within Zendesk.
 
