@@ -38,27 +38,24 @@ const CONFIG = {
   // Google Sheets Configuration
   googleSheets: {
     spreadsheetId: '1xG_fPoVsWBVwDCaDzhlyTtsqD0O7oS2qtIwMfy4IdeQ',
-    sheetName: 'Refund Audits',
-    apiEndpoint: 'https://sheets.googleapis.com/v4/spreadsheets',
+    sheetName: 'VS output',    apiEndpoint: 'https://sheets.googleapis.com/v4/spreadsheets',
         proxyUrl: '', // Set via environment variable (Apps Script Web App URL)
     // Service account credentials (use secure storage)
     serviceAccountEmail: '', // Set via environment variable
     serviceAccountKey: '', // Set via environment variable (JSON key file)
     columns: [
-      'Timestamp',
-      'Ticket ID',
-      'Tag Added',
-      'Customer Name',
-      'Order ID',
-      'Product Type',
-      'Reason Category',
-      'Refund Amount',
-      'DSS Decision',
-      'Conversation Summary',
-      'Compliance Status',
-      'Compliance Details',
-      'Agent Name',
-      'Audit Duration (ms)'
+      ''Booking ID',
+      'Week',
+      'DSS Compliance?',
+      'Booking Value Tier',
+      'L1 Reason',
+      'L2 Reason',
+      'Experience Type',
+      'Refund Type Verdict',
+      'Refund Amount & Method',
+      'DSS Rule Misapplied',
+      'DSS Severity Match',
+      'SP Contacted'
     ]
   },
 
