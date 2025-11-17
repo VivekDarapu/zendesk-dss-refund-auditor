@@ -2,28 +2,54 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>DSS Refund Auditor</title>
+  <title>Hagrid</title>
+  <link rel="stylesheet" href="hagrid-styles.css">
   <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:12px; font-size:13px; color:#111 }
-    .btn { padding:8px 12px; background:#0b63ff; color:#fff; border-radius:6px; border:0; cursor:pointer; }
-    .small { font-size:12px; color:#666; margin-top:6px; }
-    .pre { white-space:pre-wrap; background:#f6f8fa; padding:8px; border-radius:6px; font-family:monospace; font-size:12px }
-    label { display:block; margin-top:10px; font-weight:600 }
-  </style>
 </head>
 <body>
-  <h3>DSS Refund Auditor</h3>
-  <div id="status" class="small">Ready.</div>
-
-  <div style="margin-top:10px;">
-    <button id="run" class="btn">Run Audit (local)</button>
-    <button id="runAndSend" class="btn" style="margin-left:8px; background:#0b8a5f">Run & Send (optional)</button>
+  <!-- Main Container -->
+  <div id="hagrid-container">
+    
+    <!-- Tour Deadline Section - Fixed at Top -->
+    <section id="tour-deadline-section">
+      <div class="tour-deadline-card fade-in">
+        <div class="tour-deadline-header">
+          <div class="tour-deadline-icon">⏰</div>
+          <h2 class="tour-deadline-title">Tour Deadline Monitor</h2>
+        </div>
+        <div id="tour-deadline-content" class="tour-deadline-content">
+          <div class="loading">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- DSS Refund Auditor Section - Scrollable -->
+    <section id="dss-auditor-section">
+      <div class="audit-card fade-in">
+        <div class="audit-header">
+          <h2 class="audit-title">DSS Refund Auditor</h2>
+          <span class="status-badge safe" id="audit-status">Ready</span>
+        </div>
+        
+        <div id="audit-controls" style="margin-bottom: 16px;">
+          <button id="run" class="btn btn-primary">Run Audit (local)</button>
+          <button id="runAndSend" class="btn btn-primary" style="margin-left: 8px;">Run & Send (optional)</button>
+        </div>
+        
+        <div id="audit-output">
+          <label class="grid-cell-label">Output (JSON)</label>
+          <pre id="output" class="grid-cell" style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto;">(no output)</pre>
+        </div>
+      </div>
+    </section>
+    
   </div>
-
-  <label>Output (JSON)</label>
-  <pre id="output" class="pre">(no output)</pre>
-
+  
+  <!-- Scripts -->
+  <script src="time-utils.js"></script>
+  <script src="tour-deadline.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
