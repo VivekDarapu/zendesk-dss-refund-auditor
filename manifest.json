@@ -11,11 +11,7 @@
         "url": "assets/iframe.html",
         "flexible": true
       }
-    },
-    "background": {
-      "url": "assets/auto-trigger-iframe.html"
-    }
-  },
+    
   "defaultLocale": "en",
   "private": true,
   "parameters": [
