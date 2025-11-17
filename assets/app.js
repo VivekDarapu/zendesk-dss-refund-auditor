@@ -3,12 +3,12 @@
     // Google Sheets Proxy URL
     const GOOGLE_SHEETS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec';
   // Try to detect Zendesk context and ZAFClient
-  let client = null;
   let inZendesk = false;
   if (typeof ZAFClient !== 'undefined' && typeof ZAFClient.init === 'function') {
     try {
-      client = ZAFClient.init();
-      inZendesk = true;
+            // Use global client from config.js, or initialize if not available
+              const client = window.client || ZAFClient.init();
+              inZendesk = true;
     } catch (e) {
       client = null;
       inZendesk = false;
