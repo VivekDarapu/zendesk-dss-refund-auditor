@@ -221,20 +221,18 @@ class SheetsWriter {
   // Format audit data as row matching column structure
   formatAuditRow(auditData) {
     return [
-      new Date().toISOString(), // Timestamp
-      auditData.ticketId || '',
-      auditData.tagAdded || '',
-      auditData.customerName || '',
-      auditData.orderId || '',
-      auditData.productType || '',
-      auditData.reasonCategory || '',
-      auditData.refundAmount || '',
-      auditData.dssDecision || '',
-      auditData.conversationSummary || '',
-      auditData.complianceStatus || '',
-      auditData.complianceDetails || '',
-      auditData.agentName || '',
-      auditData.auditDuration || ''
+      auditData.bookingId || '',
+      new Date().toISOString().split('T')[0], // Week (date)
+      auditData.dssCompliance || '',
+      auditData.bookingValueTier || '',
+      auditData.l1Reason || '',
+      auditData.l2Reason || '',
+      auditData.experienceType || '',
+      auditData.refundTypeVerdict || '',
+      auditData.refundAmountMethod || '',
+      auditData.dssRuleMisapplied || '',
+      auditData.dssSeverityMatch || '',
+      auditData.spContacted || ''
     ];
   }
 
@@ -311,21 +309,18 @@ class SimplifiedSheetsWriter {
 
   formatAuditRow(auditData) {
     return [
-      new Date().toISOString(),
-      auditData.ticketId || '',
-      auditData.tagAdded || '',
-      auditData.customerName || '',
-      auditData.orderId || '',
-      auditData.productType || '',
-      auditData.reasonCategory || '',
-      auditData.refundAmount || '',
-      auditData.dssDecision || '',
-      auditData.conversationSummary || '',
-      auditData.complianceStatus || '',
-      auditData.complianceDetails || '',
-      auditData.agentName || '',
-      auditData.auditDuration || ''
-    ];
+      auditData.bookingId || '',
+      new Date().toISOString().split('T')[0], // Week (date)
+      auditData.dssCompliance || '',
+      auditData.bookingValueTier || '',
+      auditData.l1Reason || '',
+      auditData.l2Reason || '',
+      auditData.experienceType || '',
+      auditData.refundTypeVerdict || '',
+      auditData.refundAmountMethod || '',
+      auditData.dssRuleMisapplied || '',
+      auditData.dssSeverityMatch || '',
+      auditData.spContacted || ''
   }
 }
 
