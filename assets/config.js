@@ -3,6 +3,10 @@
 // ⚠️ SECURITY WARNING: Never commit real API keys to Git!
 // This file shows the structure. Use environment variables or secure storage in production.
 
+// Initialize ZAF client globally for config loading
+window.client = ZAFClient.init();
+
+
 const CONFIG = {
   // Tag trigger configuration
   triggers: {
@@ -36,6 +40,7 @@ const CONFIG = {
     spreadsheetId: '1xG_fPoVsWBVwDCaDzhlyTtsqD0O7oS2qtIwMfy4IdeQ',
     sheetName: 'Refund Audits',
     apiEndpoint: 'https://sheets.googleapis.com/v4/spreadsheets',
+        proxyUrl: '', // Set via environment variable (Apps Script Web App URL)
     // Service account credentials (use secure storage)
     serviceAccountEmail: '', // Set via environment variable
     serviceAccountKey: '', // Set via environment variable (JSON key file)
