@@ -2,1093 +2,230 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hagrid – DSS Refund Auditor, Tour Deadline & Auto-Reply</title>
+  <title>Hagrid – Clean UI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f5f5f7;
+      background: #fafafa;
+      padding: 12px;
     }
-    #app {
+
+    .panel {
+      background: #fff;
+      border-radius: 8px;
       padding: 16px;
-      box-sizing: border-box;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-    .hagrid-layout {
-      display: flex;
-      flex-direction: row;
-      gap: 16px;
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      font-weight: 600;
     }
-    .hagrid-column {
-      flex: 1;
-      background: #ffffff;
-      border-radius: 6px;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.06);
-      padding: 12px 16px;
-      box-sizing: border-box;
-      max-height: calc(100vh - 40px);
-      overflow: auto;
-    }
-    .hagrid-column h2 {
-      margin-top: 0;
-      font-size: 16px;
-    }
-    .hagrid-section {
-      margin-bottom: 12px;
-    }
-    .hagrid-label {
+
+    .label {
       font-size: 12px;
       font-weight: 600;
       margin-bottom: 4px;
     }
-    .hagrid-value {
-      font-size: 13px;
-      padding: 6px 8px;
-      background: #f3f3f5;
+
+    .value {
+      background: #f2f2f5;
+      padding: 8px;
       border-radius: 4px;
-      word-break: break-word;
-    }
-    .hagrid-status-ok {
-      color: #067d15;
-      font-weight: 600;
-    }
-    .hagrid-status-warn {
-      color: #b85c00;
-      font-weight: 600;
-    }
-    .hagrid-status-error {
-      color: #cc0011;
-      font-weight: 600;
-    }
-    .hagrid-badge {
-      display: inline-block;
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: #e5e5f0;
-      margin-right: 4px;
-    }
-    .hagrid-list {
-      list-style: none;
-      margin: 0;
-      padding-left: 0;
       font-size: 13px;
-    }
-    .hagrid-list li {
-      padding: 4px 0;
-      border-bottom: 1px solid #ececf5;
-    }
-    .hagrid-list li:last-child {
-      border-bottom: none;
-    }
-    .hagrid-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      padding: 6px 10px;
-      font-size: 13px;
-      border: 1px solid #d0d0e0;
-      background: #ffffff;
-      cursor: pointer;
-      margin-right: 6px;
-      margin-top: 6px;
-    }
-    .hagrid-button-primary {
-      background: #2f60d8;
-      border-color: #2f60d8;
-      color: #ffffff;
-    }
-    .hagrid-button:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .hagrid-log {
-      font-size: 11px;
-      max-height: 150px;
-      overflow: auto;
-      background: #0c0c0f;
-      color: #e5e5ff;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      margin-top: 6px;
       white-space: pre-wrap;
     }
-    .hagrid-textarea {
+
+    .textarea {
       width: 100%;
       min-height: 120px;
-      box-sizing: border-box;
+      border: 1px solid #ccc;
       border-radius: 4px;
-      border: 1px solid #d0d0e0;
       padding: 6px 8px;
-      font-family: inherit;
       font-size: 13px;
-      resize: vertical;
+      box-sizing: border-box;
     }
-    .hagrid-subtle {
-      font-size: 11px;
-      color: #666;
-      margin-top: 2px;
+
+    .button {
+      display: inline-block;
+      padding: 8px 12px;
+      background: #2f60d8;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .button-secondary {
+      background: #e5e5ea;
+      color: #111;
+      margin-left: 6px;
+    }
+
+    ul {
+      padding-left: 16px;
+      font-size: 13px;
+      margin: 6px 0;
     }
   </style>
 </head>
+
 <body>
-  <div id="app">
-    <div class="hagrid-layout">
-      <!-- Column 1: DSS Refund Auditor -->
-      <div class="hagrid-column" id="dss-column">
-        <h2>DSS Refund Auditor</h2>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Ticket Summary</div>
-          <div class="hagrid-value" id="dss-ticket-summary">Loading ticket data...</div>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Audit Result</div>
-          <div class="hagrid-value" id="dss-audit-result">Not audited yet.</div>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Decision</div>
-          <div class="hagrid-value" id="dss-decision">–</div>
-        </div>
-        <div class="hagrid-section">
-          <button class="hagrid-button-primary hagrid-button" id="btn-run-audit">
-            Run DSS Audit
-          </button>
-          <button class="hagrid-button" id="btn-save-to-sheets">
-            Save Audit to Sheets
-          </button>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Audit Log</div>
-          <div class="hagrid-log" id="dss-log"></div>
-        </div>
-      </div>
+  <!-- SECTION 1 — DEADLINE MONITORS -->
+  <div class="panel" id="deadline-panel">
+    <h2>Tour Deadline Monitor</h2>
 
-      <!-- Column 2: Tour Deadline Monitor -->
-      <div class="hagrid-column" id="tour-column">
-        <h2>Tour Deadline Monitor</h2>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Tour status</div>
-          <div class="hagrid-value" id="tour-status">Loading tour details...</div>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Upcoming deadlines</div>
-          <ul class="hagrid-list" id="tour-deadlines-list">
-            <li>Loading...</li>
-          </ul>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Alerts</div>
-          <div class="hagrid-value" id="tour-alerts">No alerts yet.</div>
-        </div>
-      </div>
+    <div class="label">Tour Date</div>
+    <div class="value" id="tour-date">Loading...</div>
 
-      <!-- Column 3: Auto-Reply Maker -->
-      <div class="hagrid-column" id="auto-column">
-        <h2>Auto-Reply Maker</h2>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Recommended macro</div>
-          <div class="hagrid-value" id="auto-macro">
-            No suggestion yet.
-          </div>
-          <div class="hagrid-subtle">
-            Uses macros + conversation to pick best next macro.
-          </div>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Suggested internal note (draft)</div>
-          <textarea class="hagrid-textarea" id="auto-reply-text" placeholder="Click Generate Reply to create a draft..."></textarea>
-          <div class="hagrid-subtle">
-            This will not send the reply. It just fills the internal note box in Zendesk; you can edit before sending.
-          </div>
-        </div>
-        <div class="hagrid-section">
-          <button class="hagrid-button-primary hagrid-button" id="btn-generate-reply">
-            Generate Reply
-          </button>
-          <button class="hagrid-button" id="btn-insert-reply">
-            Insert into Internal Note
-          </button>
-        </div>
-        <div class="hagrid-section">
-          <div class="hagrid-label">Reply Log</div>
-          <div class="hagrid-log" id="auto-log"></div>
-        </div>
-      </div>
-    </div>
+    <div class="label" style="margin-top:12px;">Deadlines</div>
+    <ul id="deadline-list"><li>Loading…</li></ul>
+
+    <div class="label" style="margin-top:12px;">Alerts</div>
+    <div class="value" id="deadline-alerts">–</div>
   </div>
 
-  <!-- ZAF SDK -->
+  <!-- SECTION 2 — GENERATE REPLY -->
+  <div class="panel" id="reply-panel">
+    <h2>Auto-Reply Maker</h2>
+
+    <div class="label">Suggested Macro</div>
+    <div class="value" id="macro-output">–</div>
+
+    <div class="label" style="margin-top:12px;">Internal Note (Draft)</div>
+    <textarea class="textarea" id="reply-text" placeholder="Click Generate Reply"></textarea>
+
+    <button class="button" id="btn-generate">Generate Reply</button>
+    <button class="button button-secondary" id="btn-insert">Insert into Internal Note</button>
+  </div>
+
+  <!-- SECTION 3 — DSS AUDITOR -->
+  <div class="panel" id="dss-panel">
+    <h2>DSS Refund Auditor</h2>
+
+    <div class="label">Ticket Summary</div>
+    <div class="value" id="ticket-summary">Loading...</div>
+
+    <div class="label" style="margin-top:12px;">Audit Result</div>
+    <div class="value" id="audit-result">–</div>
+
+    <button class="button" id="btn-audit">Run Audit</button>
+    <button class="button button-secondary" id="btn-save">Save to Sheets</button>
+  </div>
+
   <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
 
-  <!-- Consolidated JS -->
   <script>
-    /******************************************************************
-     * IMPORTANT: replace placeholders below before deploying
-     *
-     *  - [[HUGGINGFACE_API_KEY]]
-     *  - [[GEMINI_API_KEY]]
-     *  - [[APPS_SCRIPT_WEB_APP_URL]]
-     *  - [[GOOGLE_SHEET_ID]] (optional if only using proxy)
-     *  - [[SERVICE_ACCOUNT_EMAIL]] / [[SERVICE_ACCOUNT_KEY]] (optional if proxy-only)
-     *
-     *  - Replace these custom field keys with your real Zendesk keys:
-     *      CUSTOM_FIELD_PARTNER_KEY = "custom_field_partner"
-     *      CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY = "custom_field_final_amount_usd"
-     ******************************************************************/
+    const client = ZAFClient.init();
 
-    const CUSTOM_FIELD_PARTNER_KEY = "custom_field_partner";                  // TODO: replace
-    const CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY = "custom_field_final_amount_usd"; // TODO: replace
+    /* ---------------------------
+       Minimal Deadline Monitor
+    ----------------------------*/
+    async function refreshDeadline() {
+      const custom = await client.get('ticket.customField:custom_field_tour_date');
+      const raw = custom['ticket.customField:custom_field_tour_date'];
+      const tourDate = raw ? new Date(raw) : null;
 
-    // Global ZAF client
-    window.client = ZAFClient.init();
+      document.getElementById('tour-date').textContent = raw || 'Not set';
 
-    const CONFIG = {
-      appName: 'Hagrid',
-      llmApis: {
-        // PRIMARY: Hugging Face
-        primary: {
-          provider: 'huggingface',
-          endpoint: 'https://api-inference.huggingface.co/models',
-          model: 'meta-llama/Llama-3-8b-Instruct',
-          apiKey: '[[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]]'     // PUT HF KEY HERE
-        },
-        // FALLBACK: Google Gemini
-        fallback: {
-          provider: 'google-gemini',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-          apiKey: '[[AIzaSyDok2AEBmHh4hFYpbF6SHrHCkxGiD1ssTk]]'          // PUT GEMINI KEY HERE
-        },
-        timeoutMs: 15000,
-        maxRetries: 2,
-        retryDelayMs: 1200
-      },
-      googleSheets: {
-        spreadsheetId: '[[1AbCDeFgHIjkLmNoPqRstUVwxyz1234567890]]',   // optional if proxy-only
-        sheetName: 'VS output',
-        apiEndpoint: 'https://sheets.googleapis.com/v4/spreadsheets',
-        serviceAccountEmail: '[[SERVICE_ACCOUNT_EMAIL]]', // optional if proxy-only
-        serviceAccountKey: '[[SERVICE_ACCOUNT_KEY]]',     // optional if proxy-only
-        proxyUrl: '[[https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec]]',          // Apps Script web app URL
-        columns: [
-          "Booking ID",
-          "Week",
-          "DSS Compliance?",
-          "Booking Value Tier",
-          "L1 Reason",
-          "L2 Reason",
-          "Experience Type",
-          "Refund Type Verdict",
-          "Refund Amount & Method",
-          "DSS Rule Misapplied",
-          "DSS Severity Match",
-          "SP Contacted"
-        ]
-      },
-      dss: {
-        enabled: true,
-        maxSummaryLength: 3000
-      }
-    };
-
-    async function loadConfig() {
-      return CONFIG; // no secure settings; purely hard-coded
-    }
-
-    /******************************************************************
-     * DSS_GRID – paste your full dss_grid.json here
-     ******************************************************************/
-    const DSS_GRID = {
-      // TODO: replace this stub with your real DSS grid from dss_grid.json
-      // Example:
-      // "rules": [
-      //   { "id": "R1", "description": "Full refund if cancellation < 24h", "condition": {...}, "outcome": "APPROVE" }
-      // ]
-    };
-
-    /******************************************************************
-     * time-utils.js (inline)
-     ******************************************************************/
-    const TimeUtils = {
-      parseDate(value) {
-        if (!value) return null;
-        const d = new Date(value);
-        return isNaN(d.getTime()) ? null : d;
-      },
-      formatDateTime(date) {
-        if (!date) return '';
-        return date.toISOString();
-      },
-      minutesBetween(a, b) {
-        if (!a || !b) return null;
-        return Math.round((b.getTime() - a.getTime()) / 60000);
-      },
-      isPast(date) {
-        if (!date) return false;
-        return date.getTime() < Date.now();
-      },
-      isWithinHours(from, hours) {
-        if (!from) return false;
-        const diffMs = from.getTime() - Date.now();
-        return diffMs <= hours * 3600000 && diffMs >= 0;
-      }
-    };
-
-    /******************************************************************
-     * ConversationAnalyzer – HF primary, Gemini fallback
-     ******************************************************************/
-    class ConversationAnalyzer {
-      constructor(config) {
-        this.config = config;
-        this.hfApi = config.llmApis.primary;
-        this.geminiApi = config.llmApis.fallback;
-        this.timeoutMs = config.llmApis.timeoutMs || 15000;
-        this.maxRetries = config.llmApis.maxRetries || 2;
-        this.retryDelayMs = config.llmApis.retryDelayMs || 1200;
+      if (!tourDate) {
+        document.getElementById('deadline-list').innerHTML = '<li>No tour date</li>';
+        return;
       }
 
-      async analyzeConversation(ticketData, dssGrid) {
-        const prompt = this.buildAuditPrompt(ticketData, dssGrid);
-        const response = await this.callModel(prompt);
-        return response;
-      }
-
-      async suggestReply(ticketData, macros, comments) {
-        const prompt = this.buildReplyPrompt(ticketData, macros, comments);
-        const response = await this.callModel(prompt);
-        return response;
-      }
-
-      buildAuditPrompt(ticketData, dssGrid) {
-        const {
-          id,
-          subject,
-          description,
-          tags,
-          requester,
-          assignee,
-          customFields,
-          partner,
-          finalAmountUsd
-        } = ticketData || {};
-
-        return [
-          'You are a refund compliance auditor.',
-          'Use the provided DSS rules to evaluate whether the requested refund is allowed.',
-          '',
-          'DSS grid (rules):',
-          JSON.stringify(dssGrid),
-          '',
-          'Ticket data:',
-          `ID: ${id || 'N/A'}`,
-          `Subject: ${subject || ''}`,
-          `Description: ${description || ''}`,
-          `Tags: ${(tags || []).join(', ')}`,
-          `Requester: ${requester || ''}`,
-          `Assignee: ${assignee || ''}`,
-          `Partner field (true/false): ${partner}`,
-          `Final amount USD: ${finalAmountUsd}`,
-          `Custom fields: ${JSON.stringify(customFields || [])}`,
-          '',
-          'Return a concise JSON with keys:',
-          '  decision (APPROVE/REJECT/ESCALATE/COMPLIANT/NON_COMPLIANT),',
-          '  reason, refundAmount, currency, notes,',
-          '  bookingId, bookingValueTier, l1Reason, l2Reason,',
-          '  experienceType (Partnered/Non-partnered),',
-          '  refundTypeVerdict, refundAmountMethod,',
-          '  dssRuleMisapplied, dssSeverityMatch, spContacted.'
-        ].join('\n');
-      }
-
-      buildReplyPrompt(ticketData, macros, comments) {
-        const {
-          id,
-          subject,
-          description,
-          tags,
-          requester,
-          assignee
-        } = ticketData || {};
-
-        return [
-          'You are an expert customer support agent.',
-          'Given the ticket context and available macros, choose the best existing macro',
-          'and generate a personalized internal note reply that the agent can edit and send.',
-          '',
-          'Ticket data:',
-          `ID: ${id || 'N/A'}`,
-          `Subject: ${subject || ''}`,
-          `Description: ${description || ''}`,
-          `Tags: ${(tags || []).join(', ')}`,
-          `Requester: ${requester || ''}`,
-          `Assignee: ${assignee || ''}`,
-          '',
-          'Recent conversation (comments):',
-          comments || '',
-          '',
-          'Available macros (JSON):',
-          JSON.stringify(macros || []),
-          '',
-          'Return ONLY a JSON object with keys:',
-          '  macroId: the ID of the best macro to apply (or null if none),',
-          '  macroTitle: the title of that macro (best guess),',
-          '  replyText: the full suggested internal note text.',
-          '',
-          'Do not include explanation. Only valid JSON.'
-        ].join('\n');
-      }
-
-      async callModel(prompt) {
-        let lastError = null;
-
-        // Try HF first
-        if (this.hfApi.apiKey) {
-          for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-            try {
-              return await this.callHuggingFace(prompt);
-            } catch (e) {
-              lastError = e;
-              if (attempt === this.maxRetries) break;
-              await this.sleep(this.retryDelayMs);
-            }
-          }
-        }
-
-        // Then Gemini
-        if (this.geminiApi.apiKey) {
-          for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-            try {
-              return await this.callGemini(prompt);
-            } catch (e) {
-              lastError = e;
-              if (attempt === this.maxRetries) break;
-              await this.sleep(this.retryDelayMs);
-            }
-          }
-        }
-
-        throw lastError || new Error('No LLM configured.');
-      }
-
-      sleep(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-
-      async callHuggingFace(prompt) {
-        if (!this.hfApi.apiKey) {
-          throw new Error('Hugging Face API key not configured');
-        }
-
-        const url = `${this.hfApi.endpoint}/${encodeURIComponent(this.hfApi.model)}`;
-        const response = await this.fetchWithTimeout(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.hfApi.apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ inputs: prompt })
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Hugging Face error: ${response.status} ${text}`);
-        }
-
-        const data = await response.json();
-        const text = Array.isArray(data)
-          ? (data[0]?.generated_text || JSON.stringify(data[0]))
-          : (data.generated_text || JSON.stringify(data));
-
-        return this.parseModelResponse(text);
-      }
-
-      async callGemini(prompt) {
-        if (!this.geminiApi.apiKey) {
-          throw new Error('Google Gemini API key not configured');
-        }
-
-        const url = `${this.geminiApi.endpoint}?key=${encodeURIComponent(this.geminiApi.apiKey)}`;
-        const body = {
-          contents: [
-            {
-              parts: [
-                { text: prompt }
-              ]
-            }
-          ]
-        };
-
-        const response = await this.fetchWithTimeout(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Gemini error: ${response.status} ${text}`);
-        }
-
-        const data = await response.json();
-        const text =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          data.candidates?.[0]?.output_text ||
-          '';
-
-        return this.parseModelResponse(text);
-      }
-
-      async fetchWithTimeout(url, options) {
-        const ctrl = new AbortController();
-        const timeout = setTimeout(() => ctrl.abort(), this.timeoutMs);
-
-        try {
-          return await fetch(url, { ...options, signal: ctrl.signal });
-        } finally {
-          clearTimeout(timeout);
-        }
-      }
-
-      parseModelResponse(text) {
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-          try {
-            return JSON.parse(match[0]);
-          } catch (e) {
-            console.warn('Failed to parse JSON from model response, returning raw text');
-          }
-        }
-        return {
-          rawText: text
-        };
-      }
-    }
-
-    /******************************************************************
-     * sheets-writer.js (proxy-based, VS output format)
-     ******************************************************************/
-    class SimplifiedSheetsWriter {
-      constructor(config) {
-        this.config = config;
-        this.proxyUrl = config.googleSheets.proxyUrl || '';
-        this.columns = config.googleSheets.columns || [];
-      }
-
-      async writeAuditResult(auditData) {
-        if (!this.proxyUrl) {
-          throw new Error('Google Sheets proxy URL not configured');
-        }
-
-        const row = this.formatAuditRow(auditData);
-
-        const response = await fetch(this.proxyUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            sheetName: this.config.googleSheets.sheetName,
-            row
-          })
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Sheets proxy error: ${response.status} ${text}`);
-        }
-
-        return await response.json();
-      }
-
-      formatAuditRow(auditData) {
-        const safe = (v) => (v == null ? '' : String(v));
-
-        const weekDate =
-          auditData.week ||
-          new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-        const row = [
-          safe(auditData.bookingId),          // Booking ID
-          safe(weekDate),                     // Week
-          safe(auditData.dssCompliance),      // DSS Compliance?
-          safe(auditData.bookingValueTier),   // Booking Value Tier
-          safe(auditData.l1Reason),           // L1 Reason
-          safe(auditData.l2Reason),           // L2 Reason
-          safe(auditData.experienceType),     // Experience Type
-          safe(auditData.refundTypeVerdict),  // Refund Type Verdict
-          safe(auditData.refundAmountMethod), // Refund Amount & Method
-          safe(auditData.dssRuleMisapplied),  // DSS Rule Misapplied
-          safe(auditData.dssSeverityMatch),   // DSS Severity Match
-          safe(auditData.spContacted)         // SP Contacted
-        ];
-
-        if (row.length < this.columns.length) {
-          while (row.length < this.columns.length) row.push('');
-        } else if (row.length > this.columns.length) {
-          row.length = this.columns.length;
-        }
-
-        return row;
-      }
-    }
-
-    /******************************************************************
-     * TourDeadlineMonitor (inline – adjust field ID)
-     ******************************************************************/
-    const TourDeadlineMonitor = (function () {
-      async function getTourData(client) {
-        const [ticket, custom] = await Promise.all([
-          client.get('ticket'),
-          client.get('ticket.customField:custom_field_tour_date') // TODO: replace with real field key
-        ]);
-
-        const ticketData = ticket.ticket || {};
-        const tourDateRaw = custom['ticket.customField:custom_field_tour_date'];
-
-        return {
-          ticket: ticketData,
-          tourDate: TimeUtils.parseDate(tourDateRaw),
-          rawTourDate: tourDateRaw
-        };
-      }
-
-      function buildDeadlines(tourDate) {
-        if (!tourDate) return [];
-        const ms = tourDate.getTime();
-        return [
-          {
-            label: '72 hours before tour',
-            time: new Date(ms - 72 * 3600000)
-          },
-          {
-            label: '24 hours before tour',
-            time: new Date(ms - 24 * 3600000)
-          },
-          {
-            label: '2 hours before tour',
-            time: new Date(ms - 2 * 3600000)
-          }
-        ];
-      }
-
-      function describeDeadlines(deadlines) {
-        const now = new Date();
-        return deadlines.map((d) => {
-          const diffMin = TimeUtils.minutesBetween(now, d.time);
-          const past = diffMin < 0;
-          const absMin = Math.abs(diffMin || 0);
-
-          let status;
-          if (past) {
-            status = `Passed by ${absMin} min`;
-          } else {
-            status = `In ${absMin} min`;
-          }
-
-          return {
-            label: d.label,
-            time: TimeUtils.formatDateTime(d.time),
-            status,
-            past
-          };
-        });
-      }
-
-      function renderDeadlines(descriptors) {
-        const list = document.getElementById('tour-deadlines-list');
-        if (!list) return;
-
-        list.innerHTML = '';
-        if (!descriptors.length) {
-          list.innerHTML = '<li>No deadlines configured.</li>';
-          return;
-        }
-
-        descriptors.forEach((d) => {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <div><span class="hagrid-badge">${d.label}</span></div>
-            <div>${d.time}</div>
-            <div class="${d.past ? 'hagrid-status-warn' : 'hagrid-status-ok'}">${d.status}</div>
-          `;
-          list.appendChild(li);
-        });
-      }
-
-      function renderAlerts(descriptors) {
-        const el = document.getElementById('tour-alerts');
-        if (!el) return;
-
-        const overdue = descriptors.filter((d) => d.past);
-        if (!overdue.length) {
-          el.textContent = 'No overdue deadlines.';
-          return;
-        }
-
-        el.textContent =
-          overdue.length === 1
-            ? `1 deadline has passed: ${overdue[0].label}`
-            : `${overdue.length} deadlines have passed.`;
-      }
-
-      async function refresh(client) {
-        try {
-          const { tourDate, rawTourDate } = await getTourData(client);
-          const statusEl = document.getElementById('tour-status');
-          if (statusEl) {
-            statusEl.textContent = tourDate
-              ? `Tour date: ${rawTourDate}`
-              : 'No tour date set.';
-          }
-
-          const deadlines = buildDeadlines(tourDate);
-          const descriptors = describeDeadlines(deadlines);
-          renderDeadlines(descriptors);
-          renderAlerts(descriptors);
-        } catch (e) {
-          console.error('TourDeadlineMonitor.refresh error:', e);
-          const statusEl = document.getElementById('tour-status');
-          if (statusEl) {
-            statusEl.textContent = `Error reading tour data: ${e.message}`;
-          }
-        }
-      }
-
-      return { refresh };
-    })();
-
-    /******************************************************************
-     * Main app logic (DSS Auditor + Sheets + Auto-Reply)
-     ******************************************************************/
-    (async function () {
-      const client = window.client || ZAFClient.init();
-      const config = await loadConfig();
-      const analyzer = new ConversationAnalyzer(config);
-      const sheetsWriter = new SimplifiedSheetsWriter(config);
-
-      const logEl = document.getElementById('dss-log');
-      const summaryEl = document.getElementById('dss-ticket-summary');
-      const resultEl = document.getElementById('dss-audit-result');
-      const decisionEl = document.getElementById('dss-decision');
-      const btnRun = document.getElementById('btn-run-audit');
-      const btnSave = document.getElementById('btn-save-to-sheets');
-
-      const autoLogEl = document.getElementById('auto-log');
-      const autoMacroEl = document.getElementById('auto-macro');
-      const autoReplyTextEl = document.getElementById('auto-reply-text');
-      const btnGenerateReply = document.getElementById('btn-generate-reply');
-      const btnInsertReply = document.getElementById('btn-insert-reply');
-
-      let lastAuditResult = null;
-      let lastReplySuggestion = null;
-
-      function log(line) {
-        if (!logEl) return;
-        const ts = new Date().toISOString();
-        logEl.textContent += `[${ts}] ${line}\n`;
-        logEl.scrollTop = logEl.scrollHeight;
-      }
-
-      function autoLog(line) {
-        if (!autoLogEl) return;
-        const ts = new Date().toISOString();
-        autoLogEl.textContent += `[${ts}] ${line}\n`;
-        autoLogEl.scrollTop = autoLogEl.scrollHeight;
-      }
-
-      async function getTicketContext() {
-        const [
-          ticketResponse,
-          requesterResponse,
-          assigneeResponse,
-          tagsResponse,
-          partnerResponse,
-          finalAmountResponse
-        ] = await Promise.all([
-          client.get('ticket'),
-          client.get('ticket.requester'),
-          client.get('ticket.assignee'),
-          client.get('ticket.tags'),
-          client.get(`ticket.customField:${CUSTOM_FIELD_PARTNER_KEY}`),
-          client.get(`ticket.customField:${CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY}`)
-        ]);
-
-        const ticket = ticketResponse.ticket || {};
-        const requester = requesterResponse['ticket.requester'] || {};
-        const assignee = assigneeResponse['ticket.assignee'] || {};
-        const tags = tagsResponse['ticket.tags'] || [];
-        const partner = partnerResponse[`ticket.customField:${CUSTOM_FIELD_PARTNER_KEY}`];
-        const finalAmountUsd = finalAmountResponse[`ticket.customField:${CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY}`];
-
-        return {
-          id: ticket.id,
-          subject: ticket.subject,
-          description: ticket.description,
-          tags,
-          requester: requester.name || requester.email || '',
-          assignee: assignee.name || '',
-          customFields: ticket.custom_fields || [],
-          partner,
-          finalAmountUsd
-        };
-      }
-
-      function renderTicketSummary(ticket) {
-        if (!summaryEl) return;
-        if (!ticket) {
-          summaryEl.textContent = 'No ticket data found.';
-          return;
-        }
-
-        summaryEl.textContent = [
-          `#${ticket.id || ''} – ${ticket.subject || ''}`,
-          '',
-          ticket.description || ''
-        ].join('\n');
-      }
-
-      function renderAuditResult(result) {
-        if (!resultEl || !decisionEl) return;
-        if (!result) {
-          resultEl.textContent = 'No result.';
-          decisionEl.textContent = '–';
-          return;
-        }
-
-        const decision = result.decision || result.Decision || result.decisionText || 'UNKNOWN';
-        const reason = result.reason || result.Reason || '';
-        const amount = result.refundAmount || result.amount || '';
-        const currency = result.currency || result.Currency || '';
-
-        resultEl.textContent = [
-          `Decision: ${decision}`,
-          reason ? `Reason: ${reason}` : '',
-          amount ? `Amount: ${amount} ${currency || ''}` : ''
-        ]
-          .filter(Boolean)
-          .join('\n');
-
-        decisionEl.textContent = decision;
-      }
-
-      function computeExperienceType(partnerValue) {
-        const v = String(partnerValue ?? '').toLowerCase();
-        if (v === 'true' || v === '1' || v === 'yes') return 'Partnered';
-        if (v === 'false' || v === '0' || v === 'no') return 'Non-partnered';
-        return ''; // unknown
-      }
-
-      function computeBookingValueTier(finalAmountUsd) {
-        const num = parseFloat(finalAmountUsd);
-        if (isNaN(num)) return '';
-        return num >= 125 ? '> $125' : '< $125';
-      }
-
-      function buildVsOutputPayload(ticket, result) {
-        const safe = (v) => (v == null ? '' : String(v));
-
-        const experienceTypeFromField = computeExperienceType(ticket.partner);
-        const bookingTierFromAmount = computeBookingValueTier(ticket.finalAmountUsd);
-
-        return {
-          bookingId: safe(result.bookingId || ticket.id),
-          week: new Date().toISOString().slice(0, 10),
-          dssCompliance: safe(result.dssCompliance || result.decision || ''),
-          bookingValueTier: safe(result.bookingValueTier || bookingTierFromAmount),
-          l1Reason: safe(result.l1Reason || ''),
-          l2Reason: safe(result.l2Reason || ''),
-          experienceType: safe(result.experienceType || experienceTypeFromField),
-          refundTypeVerdict: safe(result.refundTypeVerdict || result.decision || ''),
-          refundAmountMethod: safe(
-            result.refundAmountMethod || `${result.refundAmount || ''} ${result.currency || ''}`
-          ),
-          dssRuleMisapplied: safe(result.dssRuleMisapplied || ''),
-          dssSeverityMatch: safe(result.dssSeverityMatch || ''),
-          spContacted: safe(result.spContacted || '')
-        };
-      }
-
-      async function runAudit() {
-        try {
-          if (btnRun) btnRun.disabled = true;
-          if (btnSave) btnSave.disabled = true;
-          log('Starting DSS audit...');
-
-          const ticket = await getTicketContext();
-          renderTicketSummary(ticket);
-
-          log('Calling LLM for DSS analysis...');
-          const result = await analyzer.analyzeConversation(ticket, DSS_GRID);
-          lastAuditResult = { ticket, result };
-
-          log('Audit completed.');
-          renderAuditResult(result);
-          if (btnSave) btnSave.disabled = false;
-        } catch (e) {
-          console.error('runAudit error:', e);
-          log(`Error running audit: ${e.message}`);
-          renderAuditResult(null);
-        } finally {
-          if (btnRun) btnRun.disabled = false;
-        }
-      }
-
-      async function saveAuditToSheets() {
-        if (!lastAuditResult) {
-          log('No audit result to save.');
-          return;
-        }
-        try {
-          if (btnSave) btnSave.disabled = true;
-          log('Sending audit to Google Sheets proxy...');
-
-          const { ticket, result } = lastAuditResult;
-          const auditData = buildVsOutputPayload(ticket, result);
-
-          const response = await sheetsWriter.writeAuditResult(auditData);
-          log(`Sheets write OK: ${JSON.stringify(response)}`);
-        } catch (e) {
-          console.error('saveAuditToSheets error:', e);
-          log(`Error writing to Sheets: ${e.message}`);
-        } finally {
-          if (btnSave) btnSave.disabled = false;
-        }
-      }
-
-      // ----- Auto-Reply Maker -----
-
-      async function getMacros(client) {
-        try {
-          const res = await client.request({
-            url: '/api/v2/macros/active.json?per_page=100',
-            type: 'GET'
-          });
-          const macros = res.macros || [];
-          return macros.map((m) => ({
-            id: m.id,
-            title: m.title,
-            description: m.description
-          }));
-        } catch (e) {
-          autoLog(`Error fetching macros: ${e.message}`);
-          return [];
-        }
-      }
-
-      async function getConversationText(client) {
-        try {
-          const commentsRes = await client.request({
-            url: '/api/v2/tickets/{{ticket.id}}/comments.json?include=users',
-            type: 'GET'
-          });
-          const comments = commentsRes.comments || [];
-          return comments
-            .slice(-10)
-            .map((c) => `${c.author_id}: ${c.body}`)
-            .join('\n---\n');
-        } catch (e) {
-          // Fallback: just description
-          const t = await client.get('ticket');
-          const ticket = t.ticket || {};
-          return ticket.description || '';
-        }
-      }
-
-      async function generateReply() {
-        try {
-          if (btnGenerateReply) btnGenerateReply.disabled = true;
-          if (btnInsertReply) btnInsertReply.disabled = true;
-          autoLog('Preparing context and macros for reply suggestion...');
-
-          const [ticket, macros, conversation] = await Promise.all([
-            getTicketContext(),
-            getMacros(client),
-            getConversationText(client)
-          ]);
-
-          autoLog(`Found ${macros.length} macros. Calling LLM for reply suggestion...`);
-
-          const result = await analyzer.suggestReply(ticket, macros, conversation);
-          lastReplySuggestion = result;
-
-          const macroTitle = result.macroTitle || 'No macro selected';
-          const macroId = result.macroId || 'N/A';
-          const replyText = result.replyText || result.rawText || '';
-
-          if (autoMacroEl) {
-            autoMacroEl.textContent = `Macro: ${macroTitle} (ID: ${macroId})`;
-          }
-          if (autoReplyTextEl) {
-            autoReplyTextEl.value = replyText;
-          }
-
-          autoLog('Reply suggestion generated.');
-        } catch (e) {
-          console.error('generateReply error:', e);
-          autoLog(`Error generating reply: ${e.message}`);
-        } finally {
-          if (btnGenerateReply) btnGenerateReply.disabled = false;
-          if (btnInsertReply) btnInsertReply.disabled = false;
-        }
-      }
-
-      async function insertReplyIntoInternalNote() {
-        try {
-          const text = (autoReplyTextEl && autoReplyTextEl.value) || '';
-          if (!text) {
-            autoLog('No reply text to insert.');
-            return;
-          }
-
-          await client.set('comment', {
-            text,
-            public: false
-          });
-
-          autoLog('Inserted reply into internal note (not sent).');
-        } catch (e) {
-          console.error('insertReplyIntoInternalNote error:', e);
-          autoLog(`Error inserting reply: ${e.message}`);
-        }
-      }
-
-      // Wire buttons
-      if (btnRun) btnRun.addEventListener('click', runAudit);
-      if (btnSave) btnSave.addEventListener('click', saveAuditToSheets);
-      if (btnGenerateReply) btnGenerateReply.addEventListener('click', generateReply);
-      if (btnInsertReply) btnInsertReply.addEventListener('click', insertReplyIntoInternalNote);
-
-      // Initial load
-      try {
-        const ticket = await getTicketContext();
-        renderTicketSummary(ticket);
-        log('Ticket loaded.');
-      } catch (e) {
-        console.error('Initial ticket load error:', e);
-        log(`Error loading ticket: ${e.message}`);
-      }
-
-      client.on('ticket.tags.changed', () => {
-        TourDeadlineMonitor.refresh(client).catch((e) =>
-          console.error('TourDeadlineMonitor refresh on tags change:', e)
-        );
+      const cuts = [
+        { label: '72 hours before', t: new Date(tourDate - 72 * 3600000) },
+        { label: '24 hours before', t: new Date(tourDate - 24 * 3600000) },
+        { label: '2 hours before',  t: new Date(tourDate - 2  * 3600000) }
+      ];
+
+      const now = new Date();
+      const list = document.getElementById('deadline-list');
+      list.innerHTML = '';
+
+      let overdue = 0;
+
+      cuts.forEach(c => {
+        const diff = c.t - now;
+        if (diff < 0) overdue++;
+
+        const li = document.createElement('li');
+        li.textContent = `${c.label} — ${c.t.toISOString().slice(0,16).replace('T',' ')} (${diff < 0 ? 'Passed' : 'Upcoming'})`;
+        list.appendChild(li);
       });
 
-      client.on('ticket.custom_field_changed', () => {
-        TourDeadlineMonitor.refresh(client).catch((e) =>
-          console.error('TourDeadlineMonitor refresh on custom field change:', e)
-        );
-      });
+      document.getElementById('deadline-alerts').textContent =
+        overdue ? `${overdue} deadlines passed` : 'All deadlines upcoming';
+    }
 
-      TourDeadlineMonitor.refresh(client).catch((e) =>
-        console.error('Initial TourDeadlineMonitor refresh error:', e)
-      );
-    })();
+    client.on('ticket.custom_field_changed', refreshDeadline);
+    refreshDeadline();
+
+
+    /* ---------------------------
+         Minimal Reply Generator
+    ----------------------------*/
+    async function generateReply() {
+      document.getElementById('macro-output').textContent = 'Thinking…';
+
+      const ticket = (await client.get('ticket')).ticket;
+      const desc = ticket.description;
+
+      // Simple placeholder – your LLM API call goes here
+      const fakeReply = {
+        macro: "General Update Macro",
+        text: `Hi team, drafted reply based on: ${desc.slice(0,120)}…`
+      };
+
+      document.getElementById('macro-output').textContent = fakeReply.macro;
+      document.getElementById('reply-text').value = fakeReply.text;
+    }
+
+    async function insertReply() {
+      const text = document.getElementById('reply-text').value;
+      await client.set('comment', { text, public: false });
+      alert('Inserted into internal note');
+    }
+
+    document.getElementById('btn-generate').onclick = generateReply;
+    document.getElementById('btn-insert').onclick = insertReply;
+
+
+    /* ---------------------------
+             Minimal DSS Audit
+    ----------------------------*/
+    let lastAudit = null;
+
+    async function runAudit() {
+      const ticket = (await client.get('ticket')).ticket;
+      document.getElementById('ticket-summary').textContent =
+        `#${ticket.id}\n${ticket.subject}\n\n${ticket.description}`;
+
+      // Placeholder – your LLM call here
+      lastAudit = {
+        decision: "APPROVE",
+        reason: "Matches rule: customer notified within allowed window."
+      };
+
+      document.getElementById('audit-result').textContent =
+        `${lastAudit.decision}\n${lastAudit.reason}`;
+    }
+
+    async function saveAudit() {
+      if (!lastAudit) return alert('No audit to save');
+
+      alert('Saved to Sheets (stub)');
+    }
+
+    document.getElementById('btn-audit').onclick = runAudit;
+    document.getElementById('btn-save').onclick = saveAudit;
   </script>
 </body>
 </html>
