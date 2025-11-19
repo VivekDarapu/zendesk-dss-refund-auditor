@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hagrid – DSS Refund Auditor & Tour Deadline Monitor</title>
+  <title>Hagrid – DSS Refund Auditor, Tour Deadline & Auto-Reply</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
@@ -117,12 +117,28 @@
       margin-top: 6px;
       white-space: pre-wrap;
     }
+    .hagrid-textarea {
+      width: 100%;
+      min-height: 120px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #d0d0e0;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .hagrid-subtle {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <div class="hagrid-layout">
-      <!-- Left column: DSS Refund Auditor -->
+      <!-- Column 1: DSS Refund Auditor -->
       <div class="hagrid-column" id="dss-column">
         <h2>DSS Refund Auditor</h2>
         <div class="hagrid-section">
@@ -151,7 +167,7 @@
         </div>
       </div>
 
-      <!-- Right column: Tour Deadline Monitor -->
+      <!-- Column 2: Tour Deadline Monitor -->
       <div class="hagrid-column" id="tour-column">
         <h2>Tour Deadline Monitor</h2>
         <div class="hagrid-section">
@@ -169,6 +185,39 @@
           <div class="hagrid-value" id="tour-alerts">No alerts yet.</div>
         </div>
       </div>
+
+      <!-- Column 3: Auto-Reply Maker -->
+      <div class="hagrid-column" id="auto-column">
+        <h2>Auto-Reply Maker</h2>
+        <div class="hagrid-section">
+          <div class="hagrid-label">Recommended macro</div>
+          <div class="hagrid-value" id="auto-macro">
+            No suggestion yet.
+          </div>
+          <div class="hagrid-subtle">
+            Uses macros + conversation to pick best next macro.
+          </div>
+        </div>
+        <div class="hagrid-section">
+          <div class="hagrid-label">Suggested internal note (draft)</div>
+          <textarea class="hagrid-textarea" id="auto-reply-text" placeholder="Click Generate Reply to create a draft..."></textarea>
+          <div class="hagrid-subtle">
+            This will not send the reply. It just fills the internal note box in Zendesk; you can edit before sending.
+          </div>
+        </div>
+        <div class="hagrid-section">
+          <button class="hagrid-button-primary hagrid-button" id="btn-generate-reply">
+            Generate Reply
+          </button>
+          <button class="hagrid-button" id="btn-insert-reply">
+            Insert into Internal Note
+          </button>
+        </div>
+        <div class="hagrid-section">
+          <div class="hagrid-label">Reply Log</div>
+          <div class="hagrid-log" id="auto-log"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -178,8 +227,21 @@
   <!-- Consolidated JS -->
   <script>
     /******************************************************************
-     * config.js (inline)
+     * IMPORTANT: replace placeholders below before deploying
+     *
+     *  - [[HUGGINGFACE_API_KEY]]
+     *  - [[GEMINI_API_KEY]]
+     *  - [[APPS_SCRIPT_WEB_APP_URL]]
+     *  - [[GOOGLE_SHEET_ID]] (optional if only using proxy)
+     *  - [[SERVICE_ACCOUNT_EMAIL]] / [[SERVICE_ACCOUNT_KEY]] (optional if proxy-only)
+     *
+     *  - Replace these custom field keys with your real Zendesk keys:
+     *      CUSTOM_FIELD_PARTNER_KEY = "custom_field_partner"
+     *      CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY = "custom_field_final_amount_usd"
      ******************************************************************/
+
+    const CUSTOM_FIELD_PARTNER_KEY = "custom_field_partner";                  // TODO: replace
+    const CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY = "custom_field_final_amount_usd"; // TODO: replace
 
     // Global ZAF client
     window.client = ZAFClient.init();
@@ -187,39 +249,43 @@
     const CONFIG = {
       appName: 'Hagrid',
       llmApis: {
+        // PRIMARY: Hugging Face
         primary: {
-          provider: 'google-gemini',
-          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-          apiKey: ''
-        },
-        fallback: {
           provider: 'huggingface',
           endpoint: 'https://api-inference.huggingface.co/models',
           model: 'meta-llama/Llama-3-8b-Instruct',
-          apiKey: ''
+          apiKey: '[[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]]'     // PUT HF KEY HERE
+        },
+        // FALLBACK: Google Gemini
+        fallback: {
+          provider: 'google-gemini',
+          endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+          apiKey: '[[AIzaSyDok2AEBmHh4hFYpbF6SHrHCkxGiD1ssTk]]'          // PUT GEMINI KEY HERE
         },
         timeoutMs: 15000,
         maxRetries: 2,
         retryDelayMs: 1200
       },
       googleSheets: {
-        spreadsheetId: '',
-        sheetName: 'Refund Audits',
+        spreadsheetId: '[[1AbCDeFgHIjkLmNoPqRstUVwxyz1234567890]]',   // optional if proxy-only
+        sheetName: 'VS output',
         apiEndpoint: 'https://sheets.googleapis.com/v4/spreadsheets',
-        serviceAccountEmail: '',
-        serviceAccountKey: '',
-        proxyUrl: '',
+        serviceAccountEmail: '[[SERVICE_ACCOUNT_EMAIL]]', // optional if proxy-only
+        serviceAccountKey: '[[SERVICE_ACCOUNT_KEY]]',     // optional if proxy-only
+        proxyUrl: '[[https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec]]',          // Apps Script web app URL
         columns: [
-          'Timestamp',
-          'Ticket ID',
-          'Requester',
-          'Refund Amount',
-          'Currency',
-          'Decision',
-          'Reason',
-          'Agent',
-          'Tags',
-          'Raw Analysis'
+          "Booking ID",
+          "Week",
+          "DSS Compliance?",
+          "Booking Value Tier",
+          "L1 Reason",
+          "L2 Reason",
+          "Experience Type",
+          "Refund Type Verdict",
+          "Refund Amount & Method",
+          "DSS Rule Misapplied",
+          "DSS Severity Match",
+          "SP Contacted"
         ]
       },
       dss: {
@@ -229,40 +295,17 @@
     };
 
     async function loadConfig() {
-      const cfg = { ...CONFIG };
-
-      try {
-        if (typeof window.client !== 'undefined') {
-          const metadata = await window.client.metadata();
-
-          cfg.llmApis.primary.apiKey =
-            metadata.settings.googleGeminiApiKey || cfg.llmApis.primary.apiKey || '';
-          cfg.llmApis.fallback.apiKey =
-            metadata.settings.huggingfaceApiKey || cfg.llmApis.fallback.apiKey || '';
-
-          cfg.googleSheets.serviceAccountEmail =
-            metadata.settings.serviceAccountEmail || cfg.googleSheets.serviceAccountEmail || '';
-          cfg.googleSheets.serviceAccountKey =
-            metadata.settings.serviceAccountKey || cfg.googleSheets.serviceAccountKey || '';
-          cfg.googleSheets.proxyUrl =
-            metadata.settings.googleSheetsProxyUrl || cfg.googleSheets.proxyUrl || '';
-        }
-      } catch (e) {
-        console.error('Failed to load app metadata:', e);
-      }
-
-      return cfg;
+      return CONFIG; // no secure settings; purely hard-coded
     }
 
     /******************************************************************
-     * dss_grid.json as JS variable
-     * Replace this stub with your actual JSON.
+     * DSS_GRID – paste your full dss_grid.json here
      ******************************************************************/
     const DSS_GRID = {
-      // Paste your full dss_grid.json content here as a JS object
-      // Example structure:
+      // TODO: replace this stub with your real DSS grid from dss_grid.json
+      // Example:
       // "rules": [
-      //   { "id": "rule_1", "description": "Sample rule", "conditions": [...], "outcome": "APPROVE" }
+      //   { "id": "R1", "description": "Full refund if cancellation < 24h", "condition": {...}, "outcome": "APPROVE" }
       // ]
     };
 
@@ -295,44 +338,31 @@
     };
 
     /******************************************************************
-     * conversation-analyzer.js (inline)
+     * ConversationAnalyzer – HF primary, Gemini fallback
      ******************************************************************/
     class ConversationAnalyzer {
       constructor(config) {
         this.config = config;
-        this.primaryApi = config.llmApis.primary;
-        this.fallbackApi = config.llmApis.fallback;
+        this.hfApi = config.llmApis.primary;
+        this.geminiApi = config.llmApis.fallback;
         this.timeoutMs = config.llmApis.timeoutMs || 15000;
         this.maxRetries = config.llmApis.maxRetries || 2;
         this.retryDelayMs = config.llmApis.retryDelayMs || 1200;
       }
 
       async analyzeConversation(ticketData, dssGrid) {
-        const prompt = this.buildPrompt(ticketData, dssGrid);
-        let lastError = null;
-
-        if (this.primaryApi.apiKey) {
-          try {
-            return await this.callGemini(prompt);
-          } catch (e) {
-            lastError = e;
-            console.warn('Gemini primary failed, falling back:', e);
-          }
-        }
-
-        if (this.fallbackApi.apiKey) {
-          try {
-            return await this.callHuggingFace(prompt);
-          } catch (e) {
-            lastError = e;
-            console.error('Hugging Face fallback failed:', e);
-          }
-        }
-
-        throw lastError || new Error('No LLM configured');
+        const prompt = this.buildAuditPrompt(ticketData, dssGrid);
+        const response = await this.callModel(prompt);
+        return response;
       }
 
-      buildPrompt(ticketData, dssGrid) {
+      async suggestReply(ticketData, macros, comments) {
+        const prompt = this.buildReplyPrompt(ticketData, macros, comments);
+        const response = await this.callModel(prompt);
+        return response;
+      }
+
+      buildAuditPrompt(ticketData, dssGrid) {
         const {
           id,
           subject,
@@ -340,7 +370,9 @@
           tags,
           requester,
           assignee,
-          customFields
+          customFields,
+          partner,
+          finalAmountUsd
         } = ticketData || {};
 
         return [
@@ -357,18 +389,128 @@
           `Tags: ${(tags || []).join(', ')}`,
           `Requester: ${requester || ''}`,
           `Assignee: ${assignee || ''}`,
-          `Custom fields: ${JSON.stringify(customFields || {})}`,
+          `Partner field (true/false): ${partner}`,
+          `Final amount USD: ${finalAmountUsd}`,
+          `Custom fields: ${JSON.stringify(customFields || [])}`,
           '',
-          'Return a concise JSON with keys: decision (APPROVE/REJECT/ESCALATE), reason, refundAmount, currency, notes.'
+          'Return a concise JSON with keys:',
+          '  decision (APPROVE/REJECT/ESCALATE/COMPLIANT/NON_COMPLIANT),',
+          '  reason, refundAmount, currency, notes,',
+          '  bookingId, bookingValueTier, l1Reason, l2Reason,',
+          '  experienceType (Partnered/Non-partnered),',
+          '  refundTypeVerdict, refundAmountMethod,',
+          '  dssRuleMisapplied, dssSeverityMatch, spContacted.'
         ].join('\n');
       }
 
+      buildReplyPrompt(ticketData, macros, comments) {
+        const {
+          id,
+          subject,
+          description,
+          tags,
+          requester,
+          assignee
+        } = ticketData || {};
+
+        return [
+          'You are an expert customer support agent.',
+          'Given the ticket context and available macros, choose the best existing macro',
+          'and generate a personalized internal note reply that the agent can edit and send.',
+          '',
+          'Ticket data:',
+          `ID: ${id || 'N/A'}`,
+          `Subject: ${subject || ''}`,
+          `Description: ${description || ''}`,
+          `Tags: ${(tags || []).join(', ')}`,
+          `Requester: ${requester || ''}`,
+          `Assignee: ${assignee || ''}`,
+          '',
+          'Recent conversation (comments):',
+          comments || '',
+          '',
+          'Available macros (JSON):',
+          JSON.stringify(macros || []),
+          '',
+          'Return ONLY a JSON object with keys:',
+          '  macroId: the ID of the best macro to apply (or null if none),',
+          '  macroTitle: the title of that macro (best guess),',
+          '  replyText: the full suggested internal note text.',
+          '',
+          'Do not include explanation. Only valid JSON.'
+        ].join('\n');
+      }
+
+      async callModel(prompt) {
+        let lastError = null;
+
+        // Try HF first
+        if (this.hfApi.apiKey) {
+          for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+            try {
+              return await this.callHuggingFace(prompt);
+            } catch (e) {
+              lastError = e;
+              if (attempt === this.maxRetries) break;
+              await this.sleep(this.retryDelayMs);
+            }
+          }
+        }
+
+        // Then Gemini
+        if (this.geminiApi.apiKey) {
+          for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+            try {
+              return await this.callGemini(prompt);
+            } catch (e) {
+              lastError = e;
+              if (attempt === this.maxRetries) break;
+              await this.sleep(this.retryDelayMs);
+            }
+          }
+        }
+
+        throw lastError || new Error('No LLM configured.');
+      }
+
+      sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async callHuggingFace(prompt) {
+        if (!this.hfApi.apiKey) {
+          throw new Error('Hugging Face API key not configured');
+        }
+
+        const url = `${this.hfApi.endpoint}/${encodeURIComponent(this.hfApi.model)}`;
+        const response = await this.fetchWithTimeout(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.hfApi.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ inputs: prompt })
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Hugging Face error: ${response.status} ${text}`);
+        }
+
+        const data = await response.json();
+        const text = Array.isArray(data)
+          ? (data[0]?.generated_text || JSON.stringify(data[0]))
+          : (data.generated_text || JSON.stringify(data));
+
+        return this.parseModelResponse(text);
+      }
+
       async callGemini(prompt) {
-        if (!this.primaryApi.apiKey) {
+        if (!this.geminiApi.apiKey) {
           throw new Error('Google Gemini API key not configured');
         }
 
-        const url = `${this.primaryApi.endpoint}?key=${encodeURIComponent(this.primaryApi.apiKey)}`;
+        const url = `${this.geminiApi.endpoint}?key=${encodeURIComponent(this.geminiApi.apiKey)}`;
         const body = {
           contents: [
             {
@@ -401,34 +543,6 @@
         return this.parseModelResponse(text);
       }
 
-      async callHuggingFace(prompt) {
-        if (!this.fallbackApi.apiKey) {
-          throw new Error('Hugging Face API key not configured');
-        }
-
-        const url = `${this.fallbackApi.endpoint}/${encodeURIComponent(this.fallbackApi.model)}`;
-        const response = await this.fetchWithTimeout(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.fallbackApi.apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ inputs: prompt })
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Hugging Face error: ${response.status} ${text}`);
-        }
-
-        const data = await response.json();
-        const text = Array.isArray(data)
-          ? (data[0]?.generated_text || JSON.stringify(data[0]))
-          : (data.generated_text || JSON.stringify(data));
-
-        return this.parseModelResponse(text);
-      }
-
       async fetchWithTimeout(url, options) {
         const ctrl = new AbortController();
         const timeout = setTimeout(() => ctrl.abort(), this.timeoutMs);
@@ -456,7 +570,7 @@
     }
 
     /******************************************************************
-     * sheets-writer.js (inline, proxy-based)
+     * sheets-writer.js (proxy-based, VS output format)
      ******************************************************************/
     class SimplifiedSheetsWriter {
       constructor(config) {
@@ -470,14 +584,17 @@
           throw new Error('Google Sheets proxy URL not configured');
         }
 
-        const row = this.buildRow(auditData);
+        const row = this.formatAuditRow(auditData);
 
         const response = await fetch(this.proxyUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ row })
+          body: JSON.stringify({
+            sheetName: this.config.googleSheets.sheetName,
+            row
+          })
         });
 
         if (!response.ok) {
@@ -488,27 +605,30 @@
         return await response.json();
       }
 
-      buildRow(auditData) {
-        const nowIso = new Date().toISOString();
+      formatAuditRow(auditData) {
         const safe = (v) => (v == null ? '' : String(v));
 
+        const weekDate =
+          auditData.week ||
+          new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
         const row = [
-          nowIso,
-          safe(auditData.ticketId),
-          safe(auditData.requester),
-          safe(auditData.refundAmount),
-          safe(auditData.currency),
-          safe(auditData.decision),
-          safe(auditData.reason),
-          safe(auditData.agent),
-          (auditData.tags || []).join(', '),
-          safe(auditData.rawAnalysis)
+          safe(auditData.bookingId),          // Booking ID
+          safe(weekDate),                     // Week
+          safe(auditData.dssCompliance),      // DSS Compliance?
+          safe(auditData.bookingValueTier),   // Booking Value Tier
+          safe(auditData.l1Reason),           // L1 Reason
+          safe(auditData.l2Reason),           // L2 Reason
+          safe(auditData.experienceType),     // Experience Type
+          safe(auditData.refundTypeVerdict),  // Refund Type Verdict
+          safe(auditData.refundAmountMethod), // Refund Amount & Method
+          safe(auditData.dssRuleMisapplied),  // DSS Rule Misapplied
+          safe(auditData.dssSeverityMatch),   // DSS Severity Match
+          safe(auditData.spContacted)         // SP Contacted
         ];
 
         if (row.length < this.columns.length) {
-          while (row.length < this.columns.length) {
-            row.push('');
-          }
+          while (row.length < this.columns.length) row.push('');
         } else if (row.length > this.columns.length) {
           row.length = this.columns.length;
         }
@@ -518,14 +638,13 @@
     }
 
     /******************************************************************
-     * tour-deadline.js (inline, simplified)
-     * Adjust custom field IDs as per your instance.
+     * TourDeadlineMonitor (inline – adjust field ID)
      ******************************************************************/
     const TourDeadlineMonitor = (function () {
       async function getTourData(client) {
         const [ticket, custom] = await Promise.all([
           client.get('ticket'),
-          client.get('ticket.customField:custom_field_tour_date') // adjust field id
+          client.get('ticket.customField:custom_field_tour_date') // TODO: replace with real field key
         ]);
 
         const ticketData = ticket.ticket || {};
@@ -540,7 +659,6 @@
 
       function buildDeadlines(tourDate) {
         if (!tourDate) return [];
-
         const ms = tourDate.getTime();
         return [
           {
@@ -645,7 +763,7 @@
     })();
 
     /******************************************************************
-     * app.js (inline main logic)
+     * Main app logic (DSS Auditor + Sheets + Auto-Reply)
      ******************************************************************/
     (async function () {
       const client = window.client || ZAFClient.init();
@@ -660,7 +778,14 @@
       const btnRun = document.getElementById('btn-run-audit');
       const btnSave = document.getElementById('btn-save-to-sheets');
 
+      const autoLogEl = document.getElementById('auto-log');
+      const autoMacroEl = document.getElementById('auto-macro');
+      const autoReplyTextEl = document.getElementById('auto-reply-text');
+      const btnGenerateReply = document.getElementById('btn-generate-reply');
+      const btnInsertReply = document.getElementById('btn-insert-reply');
+
       let lastAuditResult = null;
+      let lastReplySuggestion = null;
 
       function log(line) {
         if (!logEl) return;
@@ -669,23 +794,36 @@
         logEl.scrollTop = logEl.scrollHeight;
       }
 
+      function autoLog(line) {
+        if (!autoLogEl) return;
+        const ts = new Date().toISOString();
+        autoLogEl.textContent += `[${ts}] ${line}\n`;
+        autoLogEl.scrollTop = autoLogEl.scrollHeight;
+      }
+
       async function getTicketContext() {
         const [
           ticketResponse,
           requesterResponse,
           assigneeResponse,
-          tagsResponse
+          tagsResponse,
+          partnerResponse,
+          finalAmountResponse
         ] = await Promise.all([
           client.get('ticket'),
           client.get('ticket.requester'),
           client.get('ticket.assignee'),
-          client.get('ticket.tags')
+          client.get('ticket.tags'),
+          client.get(`ticket.customField:${CUSTOM_FIELD_PARTNER_KEY}`),
+          client.get(`ticket.customField:${CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY}`)
         ]);
 
         const ticket = ticketResponse.ticket || {};
         const requester = requesterResponse['ticket.requester'] || {};
         const assignee = assigneeResponse['ticket.assignee'] || {};
         const tags = tagsResponse['ticket.tags'] || [];
+        const partner = partnerResponse[`ticket.customField:${CUSTOM_FIELD_PARTNER_KEY}`];
+        const finalAmountUsd = finalAmountResponse[`ticket.customField:${CUSTOM_FIELD_FINAL_AMOUNT_USD_KEY}`];
 
         return {
           id: ticket.id,
@@ -694,7 +832,9 @@
           tags,
           requester: requester.name || requester.email || '',
           assignee: assignee.name || '',
-          customFields: ticket.custom_fields || []
+          customFields: ticket.custom_fields || [],
+          partner,
+          finalAmountUsd
         };
       }
 
@@ -736,6 +876,43 @@
         decisionEl.textContent = decision;
       }
 
+      function computeExperienceType(partnerValue) {
+        const v = String(partnerValue ?? '').toLowerCase();
+        if (v === 'true' || v === '1' || v === 'yes') return 'Partnered';
+        if (v === 'false' || v === '0' || v === 'no') return 'Non-partnered';
+        return ''; // unknown
+      }
+
+      function computeBookingValueTier(finalAmountUsd) {
+        const num = parseFloat(finalAmountUsd);
+        if (isNaN(num)) return '';
+        return num >= 125 ? '> $125' : '< $125';
+      }
+
+      function buildVsOutputPayload(ticket, result) {
+        const safe = (v) => (v == null ? '' : String(v));
+
+        const experienceTypeFromField = computeExperienceType(ticket.partner);
+        const bookingTierFromAmount = computeBookingValueTier(ticket.finalAmountUsd);
+
+        return {
+          bookingId: safe(result.bookingId || ticket.id),
+          week: new Date().toISOString().slice(0, 10),
+          dssCompliance: safe(result.dssCompliance || result.decision || ''),
+          bookingValueTier: safe(result.bookingValueTier || bookingTierFromAmount),
+          l1Reason: safe(result.l1Reason || ''),
+          l2Reason: safe(result.l2Reason || ''),
+          experienceType: safe(result.experienceType || experienceTypeFromField),
+          refundTypeVerdict: safe(result.refundTypeVerdict || result.decision || ''),
+          refundAmountMethod: safe(
+            result.refundAmountMethod || `${result.refundAmount || ''} ${result.currency || ''}`
+          ),
+          dssRuleMisapplied: safe(result.dssRuleMisapplied || ''),
+          dssSeverityMatch: safe(result.dssSeverityMatch || ''),
+          spContacted: safe(result.spContacted || '')
+        };
+      }
+
       async function runAudit() {
         try {
           if (btnRun) btnRun.disabled = true;
@@ -745,7 +922,7 @@
           const ticket = await getTicketContext();
           renderTicketSummary(ticket);
 
-          log('Calling LLM for analysis...');
+          log('Calling LLM for DSS analysis...');
           const result = await analyzer.analyzeConversation(ticket, DSS_GRID);
           lastAuditResult = { ticket, result };
 
@@ -771,19 +948,9 @@
           log('Sending audit to Google Sheets proxy...');
 
           const { ticket, result } = lastAuditResult;
-          const payload = {
-            ticketId: ticket.id,
-            requester: ticket.requester,
-            refundAmount: result.refundAmount || '',
-            currency: result.currency || '',
-            decision: result.decision || '',
-            reason: result.reason || '',
-            agent: ticket.assignee,
-            tags: ticket.tags,
-            rawAnalysis: JSON.stringify(result)
-          };
+          const auditData = buildVsOutputPayload(ticket, result);
 
-          const response = await sheetsWriter.writeAuditResult(payload);
+          const response = await sheetsWriter.writeAuditResult(auditData);
           log(`Sheets write OK: ${JSON.stringify(response)}`);
         } catch (e) {
           console.error('saveAuditToSheets error:', e);
@@ -793,13 +960,110 @@
         }
       }
 
-      if (btnRun) {
-        btnRun.addEventListener('click', runAudit);
-      }
-      if (btnSave) {
-        btnSave.addEventListener('click', saveAuditToSheets);
+      // ----- Auto-Reply Maker -----
+
+      async function getMacros(client) {
+        try {
+          const res = await client.request({
+            url: '/api/v2/macros/active.json?per_page=100',
+            type: 'GET'
+          });
+          const macros = res.macros || [];
+          return macros.map((m) => ({
+            id: m.id,
+            title: m.title,
+            description: m.description
+          }));
+        } catch (e) {
+          autoLog(`Error fetching macros: ${e.message}`);
+          return [];
+        }
       }
 
+      async function getConversationText(client) {
+        try {
+          const commentsRes = await client.request({
+            url: '/api/v2/tickets/{{ticket.id}}/comments.json?include=users',
+            type: 'GET'
+          });
+          const comments = commentsRes.comments || [];
+          return comments
+            .slice(-10)
+            .map((c) => `${c.author_id}: ${c.body}`)
+            .join('\n---\n');
+        } catch (e) {
+          // Fallback: just description
+          const t = await client.get('ticket');
+          const ticket = t.ticket || {};
+          return ticket.description || '';
+        }
+      }
+
+      async function generateReply() {
+        try {
+          if (btnGenerateReply) btnGenerateReply.disabled = true;
+          if (btnInsertReply) btnInsertReply.disabled = true;
+          autoLog('Preparing context and macros for reply suggestion...');
+
+          const [ticket, macros, conversation] = await Promise.all([
+            getTicketContext(),
+            getMacros(client),
+            getConversationText(client)
+          ]);
+
+          autoLog(`Found ${macros.length} macros. Calling LLM for reply suggestion...`);
+
+          const result = await analyzer.suggestReply(ticket, macros, conversation);
+          lastReplySuggestion = result;
+
+          const macroTitle = result.macroTitle || 'No macro selected';
+          const macroId = result.macroId || 'N/A';
+          const replyText = result.replyText || result.rawText || '';
+
+          if (autoMacroEl) {
+            autoMacroEl.textContent = `Macro: ${macroTitle} (ID: ${macroId})`;
+          }
+          if (autoReplyTextEl) {
+            autoReplyTextEl.value = replyText;
+          }
+
+          autoLog('Reply suggestion generated.');
+        } catch (e) {
+          console.error('generateReply error:', e);
+          autoLog(`Error generating reply: ${e.message}`);
+        } finally {
+          if (btnGenerateReply) btnGenerateReply.disabled = false;
+          if (btnInsertReply) btnInsertReply.disabled = false;
+        }
+      }
+
+      async function insertReplyIntoInternalNote() {
+        try {
+          const text = (autoReplyTextEl && autoReplyTextEl.value) || '';
+          if (!text) {
+            autoLog('No reply text to insert.');
+            return;
+          }
+
+          await client.set('comment', {
+            text,
+            public: false
+          });
+
+          autoLog('Inserted reply into internal note (not sent).');
+        } catch (e) {
+          console.error('insertReplyIntoInternalNote error:', e);
+          autoLog(`Error inserting reply: ${e.message}`);
+        }
+      }
+
+      // Wire buttons
+      if (btnRun) btnRun.addEventListener('click', runAudit);
+      if (btnSave) btnSave.addEventListener('click', saveAuditToSheets);
+      if (btnGenerateReply) btnGenerateReply.addEventListener('click', generateReply);
+      if (btnInsertReply) btnInsertReply.addEventListener('click', insertReplyIntoInternalNote);
+
+      // Initial load
       try {
         const ticket = await getTicketContext();
         renderTicketSummary(ticket);
