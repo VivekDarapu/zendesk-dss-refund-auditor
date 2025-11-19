@@ -1,5 +1,6 @@
 {
-  "name": "Hagrid", "author": {
+  "name": "Hagrid",
+  "author": {
     "name": "Your Organization",
     "email": "support@example.com"
   },
@@ -10,48 +11,11 @@
       "ticket_sidebar": {
         "url": "assets/iframe.html",
         "flexible": true
-      },
-        },
-    
+      }
+    }
+  },
   "defaultLocale": "en",
   "private": true,
-  "parameters": [
-    {
-      "name": "googleGeminiApiKey",
-      "type": "text",
-      "required": false,
-      "secure": true,
-      "default": ""
-    },
-    {
-      "name": "huggingfaceApiKey",
-      "type": "text",
-      "required": false,
-      "secure": true,
-      "default": ""
-    },
-    {
-      "name": "serviceAccountEmail",
-      "type": "text",
-      "required": false,
-      "secure": true,
-      "default": ""
-    },
-    {
-      "name": "serviceAccountKey",
-      "type": "text",
-      "required": false,
-      "secure": true,
-      "default": ""
-    },
-    {
-      "name": "googleSheetsProxyUrl",
-      "type": "text",
-      "required": false,
-      "secure": true,
-      "default": ""
-    }
-  ],
   "domainWhitelist": [],
   "singleInstall": false
 }
