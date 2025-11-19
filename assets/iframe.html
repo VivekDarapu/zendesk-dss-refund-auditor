@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Hagrid – Clean UI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <title>Hagrid App – Direct Key Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
@@ -12,7 +12,6 @@
       background: #fafafa;
       padding: 12px;
     }
-
     .panel {
       background: #fff;
       border-radius: 8px;
@@ -20,68 +19,57 @@
       margin-bottom: 16px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-
     h2 {
-      margin: 0 0 12px 0;
+      margin-bottom: 12px;
       font-size: 15px;
       font-weight: 600;
     }
-
     .label {
-      font-size: 12px;
       font-weight: 600;
+      font-size: 12px;
       margin-bottom: 4px;
     }
-
     .value {
       background: #f2f2f5;
       padding: 8px;
       border-radius: 4px;
-      font-size: 13px;
       white-space: pre-wrap;
+      font-size: 13px;
     }
-
-    .textarea {
+    textarea {
       width: 100%;
       min-height: 120px;
+      padding: 6px 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
-      padding: 6px 8px;
       font-size: 13px;
-      box-sizing: border-box;
     }
-
     .button {
-      display: inline-block;
       padding: 8px 12px;
       background: #2f60d8;
       color: #fff;
       border-radius: 4px;
       cursor: pointer;
       border: none;
-      font-size: 13px;
       margin-top: 8px;
+      font-size: 13px;
     }
-
     .button-secondary {
       background: #e5e5ea;
       color: #111;
       margin-left: 6px;
     }
-
     ul {
       padding-left: 16px;
-      font-size: 13px;
-      margin: 6px 0;
     }
   </style>
 </head>
 
 <body>
-  <!-- SECTION 1 — DEADLINE MONITORS -->
-  <div class="panel" id="deadline-panel">
-    <h2>Tour Deadline Monitor</h2>
 
+  <!-- DEADLINE MONITOR -->
+  <div class="panel">
+    <h2>Tour Deadline Monitor</h2>
     <div class="label">Tour Date</div>
     <div class="value" id="tour-date">Loading...</div>
 
@@ -92,140 +80,219 @@
     <div class="value" id="deadline-alerts">–</div>
   </div>
 
-  <!-- SECTION 2 — GENERATE REPLY -->
-  <div class="panel" id="reply-panel">
-    <h2>Auto-Reply Maker</h2>
+  <!-- AUTO REPLY MAKER -->
+  <div class="panel">
+    <h2>Auto Reply Maker</h2>
 
     <div class="label">Suggested Macro</div>
     <div class="value" id="macro-output">–</div>
 
-    <div class="label" style="margin-top:12px;">Internal Note (Draft)</div>
-    <textarea class="textarea" id="reply-text" placeholder="Click Generate Reply"></textarea>
+    <div class="label" style="margin-top:12px;">Internal Note Draft</div>
+    <textarea id="reply-text" placeholder="Click Generate Reply"></textarea>
 
     <button class="button" id="btn-generate">Generate Reply</button>
-    <button class="button button-secondary" id="btn-insert">Insert into Internal Note</button>
+    <button class="button button-secondary" id="btn-insert">Insert</button>
   </div>
 
-  <!-- SECTION 3 — DSS AUDITOR -->
-  <div class="panel" id="dss-panel">
+  <!-- DSS AUDITOR -->
+  <div class="panel">
     <h2>DSS Refund Auditor</h2>
 
     <div class="label">Ticket Summary</div>
-    <div class="value" id="ticket-summary">Loading...</div>
+    <div class="value" id="ticket-summary">Loading…</div>
 
     <div class="label" style="margin-top:12px;">Audit Result</div>
     <div class="value" id="audit-result">–</div>
 
     <button class="button" id="btn-audit">Run Audit</button>
-    <button class="button button-secondary" id="btn-save">Save to Sheets</button>
+    <button class="button button-secondary" id="btn-save">Save Audit</button>
   </div>
 
+
+  <!-- ZENDESK SDK -->
   <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
 
   <script>
     const client = ZAFClient.init();
 
-    /* ---------------------------
-       Minimal Deadline Monitor
-    ----------------------------*/
+    /* -------------------------------------------------------
+       🔐 DIRECTLY EMBED YOUR KEYS HERE
+    --------------------------------------------------------*/
+    const CONFIG = {
+      HF_API_KEY: "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",
+      HF_MODEL: "meta-llama/Llama-3-8b-Instruct",
+
+      GEMINI_API_KEY: "AIzaSyDok2AEBmHh4hFYpbF6SHrHCkxGiD1ssTk",
+      GEMINI_MODEL: "gemini-1.5-flash",
+
+      SHEETS_PROXY: "https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec"
+    };
+
+
+    /* -------------------------------------------------------
+       DEADLINE MONITOR
+    --------------------------------------------------------*/
+    client.on("app.registered", refreshDeadline);
+
     async function refreshDeadline() {
-      const custom = await client.get('ticket.customField:custom_field_tour_date');
-      const raw = custom['ticket.customField:custom_field_tour_date'];
-      const tourDate = raw ? new Date(raw) : null;
+      const raw = (await client.get('ticket.customField:custom_field_tour_date'))
+        ['ticket.customField:custom_field_tour_date'];
 
-      document.getElementById('tour-date').textContent = raw || 'Not set';
+      document.getElementById('tour-date').textContent = raw || "Not set";
 
-      if (!tourDate) {
-        document.getElementById('deadline-list').innerHTML = '<li>No tour date</li>';
-        return;
-      }
+      if (!raw) return;
 
-      const cuts = [
-        { label: '72 hours before', t: new Date(tourDate - 72 * 3600000) },
-        { label: '24 hours before', t: new Date(tourDate - 24 * 3600000) },
-        { label: '2 hours before',  t: new Date(tourDate - 2  * 3600000) }
+      const tourDate = new Date(raw);
+      const now = new Date();
+
+      const deadlines = [
+        { label: "72 hours before", t: new Date(tourDate - 72*3600000) },
+        { label: "24 hours before", t: new Date(tourDate - 24*3600000) },
+        { label: "2 hours before",  t: new Date(tourDate - 2*3600000) }
       ];
 
-      const now = new Date();
       const list = document.getElementById('deadline-list');
-      list.innerHTML = '';
-
+      list.innerHTML = "";
       let overdue = 0;
 
-      cuts.forEach(c => {
-        const diff = c.t - now;
+      deadlines.forEach(d => {
+        const diff = d.t - now;
         if (diff < 0) overdue++;
 
-        const li = document.createElement('li');
-        li.textContent = `${c.label} — ${c.t.toISOString().slice(0,16).replace('T',' ')} (${diff < 0 ? 'Passed' : 'Upcoming'})`;
+        const li = document.createElement("li");
+        li.textContent =
+          `${d.label} — ${d.t.toISOString().slice(0,16)} (${diff < 0 ? "Passed" : "Upcoming"})`;
         list.appendChild(li);
       });
 
       document.getElementById('deadline-alerts').textContent =
-        overdue ? `${overdue} deadlines passed` : 'All deadlines upcoming';
+        overdue ? `${overdue} missed` : "All upcoming";
     }
 
-    client.on('ticket.custom_field_changed', refreshDeadline);
-    refreshDeadline();
+
+    /* -------------------------------------------------------
+       LLM CALLS (HF + GEMINI FALLBACK)
+    --------------------------------------------------------*/
+    async function callHF(prompt) {
+      const res = await fetch(
+        `https://api-inference.huggingface.co/models/${CONFIG.HF_MODEL}`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${CONFIG.HF_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: prompt })
+        }
+      );
+      const out = await res.json();
+      return out[0]?.generated_text || JSON.stringify(out);
+    }
+
+    async function callGemini(prompt) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+      const out = await res.json();
+      return out?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    }
 
 
-    /* ---------------------------
-         Minimal Reply Generator
-    ----------------------------*/
+    /* -------------------------------------------------------
+       AUTO REPLY MAKER
+    --------------------------------------------------------*/
+    document.getElementById("btn-generate").onclick = generateReply;
+    document.getElementById("btn-insert").onclick = insertReply;
+
     async function generateReply() {
-      document.getElementById('macro-output').textContent = 'Thinking…';
+      document.getElementById('macro-output').textContent = "Thinking…";
 
-      const ticket = (await client.get('ticket')).ticket;
-      const desc = ticket.description;
+      const t = (await client.get('ticket')).ticket;
 
-      // Simple placeholder – your LLM API call goes here
-      const fakeReply = {
-        macro: "General Update Macro",
-        text: `Hi team, drafted reply based on: ${desc.slice(0,120)}…`
-      };
+      const prompt = `
+Provide an internal note + best macro.
+Ticket:
+${t.description}
+Return ONLY JSON:
+{ "macro": "", "reply": "" }
+      `;
 
-      document.getElementById('macro-output').textContent = fakeReply.macro;
-      document.getElementById('reply-text').value = fakeReply.text;
+      let out;
+      try { out = await callHF(prompt); }
+      catch { out = await callGemini(prompt); }
+
+      let parsed = {};
+      try { parsed = JSON.parse(out.match(/\{[\s\S]*\}/)[0]); }
+      catch { parsed = { macro: "General Macro", reply: out }; }
+
+      document.getElementById('macro-output').textContent = parsed.macro;
+      document.getElementById('reply-text').value = parsed.reply;
     }
 
     async function insertReply() {
-      const text = document.getElementById('reply-text').value;
-      await client.set('comment', { text, public: false });
-      alert('Inserted into internal note');
+      await client.set("comment", {
+        text: document.getElementById("reply-text").value,
+        public: false
+      });
+      alert("Inserted into internal note");
     }
 
-    document.getElementById('btn-generate').onclick = generateReply;
-    document.getElementById('btn-insert').onclick = insertReply;
 
-
-    /* ---------------------------
-             Minimal DSS Audit
-    ----------------------------*/
-    let lastAudit = null;
+    /* -------------------------------------------------------
+       DSS AUDITOR
+    --------------------------------------------------------*/
+    document.getElementById("btn-audit").onclick = runAudit;
+    document.getElementById("btn-save").onclick = saveAudit;
 
     async function runAudit() {
       const ticket = (await client.get('ticket')).ticket;
+
       document.getElementById('ticket-summary').textContent =
         `#${ticket.id}\n${ticket.subject}\n\n${ticket.description}`;
 
-      // Placeholder – your LLM call here
-      lastAudit = {
-        decision: "APPROVE",
-        reason: "Matches rule: customer notified within allowed window."
-      };
+      const prompt = `
+Perform DSS audit. Return JSON:
+{ "decision": "", "reason": "" }
+      `;
+
+      let out;
+      try { out = await callHF(prompt); }
+      catch { out = await callGemini(prompt); }
+
+      let audit = {};
+      try { audit = JSON.parse(out.match(/\{[\s\S]*\}/)[0]); }
+      catch { audit = { decision: "UNKNOWN", reason: out }; }
+
+      window._lastAudit = audit;
 
       document.getElementById('audit-result').textContent =
-        `${lastAudit.decision}\n${lastAudit.reason}`;
+        `${audit.decision}\n${audit.reason}`;
     }
 
     async function saveAudit() {
-      if (!lastAudit) return alert('No audit to save');
+      if (!window._lastAudit) return alert("Run audit first");
 
-      alert('Saved to Sheets (stub)');
+      await fetch(CONFIG.SHEETS_PROXY, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheetName: "VS output",
+          row: [
+            new Date().toISOString().slice(0,10),
+            window._lastAudit.decision,
+            window._lastAudit.reason
+          ]
+        })
+      });
+
+      alert("Saved to Sheets");
     }
-
-    document.getElementById('btn-audit').onclick = runAudit;
-    document.getElementById('btn-save').onclick = saveAudit;
   </script>
+
 </body>
 </html>
