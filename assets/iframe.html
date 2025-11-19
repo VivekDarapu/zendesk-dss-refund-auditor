@@ -1,298 +1,395 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Hagrid App – Direct Key Version</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>AI Ticket Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
-      margin: 0;
-      background: #fafafa;
-      padding: 12px;
-    }
-    .panel {
-      background: #fff;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-    h2 {
-      margin-bottom: 12px;
-      font-size: 15px;
-      font-weight: 600;
-    }
-    .label {
-      font-weight: 600;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .value {
-      background: #f2f2f5;
-      padding: 8px;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      font-size: 13px;
-    }
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 6px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 13px;
-    }
-    .button {
-      padding: 8px 12px;
-      background: #2f60d8;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-      border: none;
-      margin-top: 8px;
-      font-size: 13px;
-    }
-    .button-secondary {
-      background: #e5e5ea;
-      color: #111;
-      margin-left: 6px;
-    }
-    ul {
-      padding-left: 16px;
-    }
-  </style>
+<!-- Zendesk SDK -->
+<script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+
+<!-- Inter font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --primary: #0066cc;
+    --warning: #d97706;
+    --error: #dc2626;
+    --success: #059669;
+    --bg: #ffffff;
+    --surface: #f9fafb;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-light: #6b7280;
+    --radius: 12px;
+    --shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  body {
+    margin: 0;
+    background: var(--surface);
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--bg);
+    padding: 20px;
+    margin-bottom: 28px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .info {
+    margin: 6px 0;
+    color: var(--text-light);
+  }
+
+  .note {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .note-warn {
+    background: #fff7e6;
+    border-left: 4px solid var(--warning);
+  }
+
+  .note-error {
+    background: #feeceb;
+    border-left: 4px solid var(--error);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 130px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-right: 8px;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: #e5e7eb;
+    color: #000;
+  }
+</style>
 </head>
 
+
 <body>
+<div class="container">
 
   <!-- DEADLINE MONITOR -->
-  <div class="panel">
+  <div class="card">
     <h2>Tour Deadline Monitor</h2>
-    <div class="label">Tour Date</div>
-    <div class="value" id="tour-date">Loading...</div>
-
-    <div class="label" style="margin-top:12px;">Deadlines</div>
-    <ul id="deadline-list"><li>Loading…</li></ul>
-
-    <div class="label" style="margin-top:12px;">Alerts</div>
-    <div class="value" id="deadline-alerts">–</div>
+    <div id="deadline-output">Loading…</div>
   </div>
 
-  <!-- AUTO REPLY MAKER -->
-  <div class="panel">
-    <h2>Auto Reply Maker</h2>
+  <!-- REPLY GENERATOR -->
+  <div class="card">
+    <h2>Generate Reply</h2>
 
-    <div class="label">Suggested Macro</div>
-    <div class="value" id="macro-output">–</div>
+    <textarea id="reply-box" placeholder="Click Generate Reply"></textarea>
 
-    <div class="label" style="margin-top:12px;">Internal Note Draft</div>
-    <textarea id="reply-text" placeholder="Click Generate Reply"></textarea>
+    <button class="btn-primary" id="btn-reply">Generate Reply</button>
+    <button class="btn-secondary" id="btn-insert-reply">Insert Internal Note</button>
 
-    <button class="button" id="btn-generate">Generate Reply</button>
-    <button class="button button-secondary" id="btn-insert">Insert</button>
+    <div id="reply-error" style="margin-top:10px;color:var(--error)"></div>
   </div>
 
-  <!-- DSS AUDITOR -->
-  <div class="panel">
-    <h2>DSS Refund Auditor</h2>
+  <!-- DSS AUDIT -->
+  <div class="card">
+    <h2>DSS Refund Audit</h2>
 
-    <div class="label">Ticket Summary</div>
-    <div class="value" id="ticket-summary">Loading…</div>
+    <div id="audit-output"></div>
+    <button class="btn-primary" id="btn-audit">Run Audit</button>
+    <button class="btn-secondary" id="btn-save-audit">Send to Sheets</button>
 
-    <div class="label" style="margin-top:12px;">Audit Result</div>
-    <div class="value" id="audit-result">–</div>
-
-    <button class="button" id="btn-audit">Run Audit</button>
-    <button class="button button-secondary" id="btn-save">Save Audit</button>
+    <div id="audit-error" style="margin-top:10px;color:var(--error)"></div>
   </div>
 
-
-  <!-- ZENDESK SDK -->
-  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
-
-  <script>
-    const client = ZAFClient.init();
-
-    /* -------------------------------------------------------
-       🔐 DIRECTLY EMBED YOUR KEYS HERE
-    --------------------------------------------------------*/
-    const CONFIG = {
-      HF_API_KEY: "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",
-      HF_MODEL: "meta-llama/Llama-3-8b-Instruct",
-
-      GEMINI_API_KEY: "AIzaSyDok2AEBmHh4hFYpbF6SHrHCkxGiD1ssTk",
-      GEMINI_MODEL: "gemini-1.5-flash",
-
-      SHEETS_PROXY: "https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec"
-    };
+</div>
 
 
-    /* -------------------------------------------------------
-       DEADLINE MONITOR
-    --------------------------------------------------------*/
-    client.on("app.registered", refreshDeadline);
+<script>
+/************************************************************
+ * CONFIG
+ ************************************************************/
+const client = ZAFClient.init();
+client.invoke('resize', { width: '100%', height: '900px' });
 
-    async function refreshDeadline() {
-      const raw = (await client.get('ticket.customField:custom_field_tour_date'))
-        ['ticket.customField:custom_field_tour_date'];
+/* Replace with your deployed Google Apps Script Web App URL */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec";
 
-      document.getElementById('tour-date').textContent = raw || "Not set";
+/************************************************************
+ * GENERIC BACKEND CALLER
+ ************************************************************/
+async function backend(action, payload = {}) {
+  const body = JSON.stringify({ action, ...payload });
 
-      if (!raw) return;
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body
+  });
 
-      const tourDate = new Date(raw);
-      const now = new Date();
+  return await res.json();
+}
 
-      const deadlines = [
-        { label: "72 hours before", t: new Date(tourDate - 72*3600000) },
-        { label: "24 hours before", t: new Date(tourDate - 24*3600000) },
-        { label: "2 hours before",  t: new Date(tourDate - 2*3600000) }
-      ];
+/************************************************************
+ * 1️⃣ DEADLINE MONITOR
+ ************************************************************/
+async function loadDeadline() {
+  const out = document.getElementById("deadline-output");
 
-      const list = document.getElementById('deadline-list');
-      list.innerHTML = "";
-      let overdue = 0;
+  const fields = await client.get([
+    "ticket.customField:custom_field_360021522151", // City
+    "ticket.customField:custom_field_360024323231", // Tour Date
+    "ticket.customField:custom_field_360021522271", // Start Time
+    "ticket.customField:custom_field_360021520271"  // Completion Type
+  ]);
 
-      deadlines.forEach(d => {
-        const diff = d.t - now;
-        if (diff < 0) overdue++;
+  const city = fields["ticket.customField:custom_field_360021522151"];
+  const tourDate = fields["ticket.customField:custom_field_360024323231"];
+  const startTime = fields["ticket.customField:custom_field_360021522271"];
+  const completion = fields["ticket.customField:custom_field_360021520271"];
 
-        const li = document.createElement("li");
-        li.textContent =
-          `${d.label} — ${d.t.toISOString().slice(0,16)} (${diff < 0 ? "Passed" : "Upcoming"})`;
-        list.appendChild(li);
-      });
+  if (completion) {
+    out.innerHTML = "<b>Completion Type already set.</b><br>No action required.";
+    return;
+  }
 
-      document.getElementById('deadline-alerts').textContent =
-        overdue ? `${overdue} missed` : "All upcoming";
-    }
+  if (!city || !tourDate || !startTime) {
+    out.innerHTML = "Missing City / Tour Date / Start Time fields";
+    return;
+  }
+
+  // ① Determine timezone via Gemini
+  const tzPrompt = `City or place: "${city}". Return ONLY the correct IANA timezone.`;
+  const tzResult = await backend("gemini", { prompt: tzPrompt });
+
+  let timezone = "Asia/Kolkata";
+  try {
+    timezone = tzResult?.result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Asia/Kolkata";
+  } catch {}
+
+  // ② Build full datetime
+  const fullString = `${tourDate} ${startTime}`;
+  const tourDT = new Date(fullString);
+
+  // ③ Convert NOW → city time
+  const nowInCity = new Date(
+    new Date().toLocaleString("en-US", { timeZone: timezone })
+  );
+
+  const diffMs = tourDT - nowInCity;
+  const diffMin = Math.floor(diffMs / 60000);
+
+  let html = `
+    <div class="info"><b>City:</b> ${city}</div>
+    <div class="info"><b>Timezone:</b> ${timezone}</div>
+    <div class="info"><b>Tour Date:</b> ${tourDate}</div>
+    <div class="info"><b>Start Time:</b> ${startTime}</div>
+    <div class="info"><b>Minutes to fulfill:</b> ${diffMin}</div>
+  `;
+
+  // No action required case
+  if (diffMin > 15) {
+    out.innerHTML = html + `<div class="note">No action required.</div>`;
+    return;
+  }
+
+  // Internal note already added?
+  const comments = await client.get("ticket.comments");
+  const alreadyAdded = comments["ticket.comments"].some(c =>
+    c.body.includes("experience time")
+  );
+  if (alreadyAdded) {
+    out.innerHTML = html + `<div class="note">Internal note already added.</div>`;
+    return;
+  }
+
+  // Get ticket ID
+  const ticketId = (await client.get("ticket.id"))["ticket.id"];
+
+  // CASE: 0 < diff ≤ 15
+  if (diffMin > 0 && diffMin <= 15) {
+    const note = `
+The experience time is less than 15 minutes away.
+It will expire at ${startTime} (${timezone}).
+Please take the necessary action.
+    `.trim();
+
+    await addInternalNote(ticketId, note);
+
+    out.innerHTML = html +
+      `<div class="note note-warn">⚠️ Less than 15 minutes remaining.</div>`;
+    return;
+  }
+
+  // CASE: diff < 0
+  if (diffMin < 0) {
+    const note = `
+The experience time has already passed.
+Please take the necessary action.
+    `.trim();
+
+    await addInternalNote(ticketId, note);
+
+    out.innerHTML = html +
+      `<div class="note note-error">⛔ Experience time has passed.</div>`;
+    return;
+  }
+}
+
+async function addInternalNote(ticketId, text) {
+  return client.request({
+    url: `/api/v2/tickets/${ticketId}.json`,
+    method: "PUT",
+    contentType: "application/json",
+    data: JSON.stringify({
+      ticket: {
+        comment: { body: text, public: false }
+      }
+    })
+  });
+}
 
 
-    /* -------------------------------------------------------
-       LLM CALLS (HF + GEMINI FALLBACK)
-    --------------------------------------------------------*/
-    async function callHF(prompt) {
-      const res = await fetch(
-        `https://api-inference.huggingface.co/models/${CONFIG.HF_MODEL}`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${CONFIG.HF_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ inputs: prompt })
-        }
-      );
-      const out = await res.json();
-      return out[0]?.generated_text || JSON.stringify(out);
-    }
-
-    async function callGemini(prompt) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        }
-      );
-      const out = await res.json();
-      return out?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    }
 
 
-    /* -------------------------------------------------------
-       AUTO REPLY MAKER
-    --------------------------------------------------------*/
-    document.getElementById("btn-generate").onclick = generateReply;
-    document.getElementById("btn-insert").onclick = insertReply;
+/************************************************************
+ * 2️⃣ GENERATE REPLY
+ ************************************************************/
+document.getElementById("btn-reply").onclick = async () => {
+  const out = document.getElementById("reply-box");
+  const err = document.getElementById("reply-error");
+  err.textContent = "";
 
-    async function generateReply() {
-      document.getElementById('macro-output').textContent = "Thinking…";
+  const ticket = (await client.get("ticket")).ticket;
+  const prompt = `
+You are a Zendesk agent. Based on this ticket description, write a helpful internal note.
 
-      const t = (await client.get('ticket')).ticket;
-
-      const prompt = `
-Provide an internal note + best macro.
 Ticket:
-${t.description}
-Return ONLY JSON:
-{ "macro": "", "reply": "" }
-      `;
+${ticket.description}
 
-      let out;
-      try { out = await callHF(prompt); }
-      catch { out = await callGemini(prompt); }
+Return ONLY the suggested reply text.
+  `.trim();
 
-      let parsed = {};
-      try { parsed = JSON.parse(out.match(/\{[\s\S]*\}/)[0]); }
-      catch { parsed = { macro: "General Macro", reply: out }; }
+  const resp = await backend("gemini", { prompt });
 
-      document.getElementById('macro-output').textContent = parsed.macro;
-      document.getElementById('reply-text').value = parsed.reply;
-    }
+  try {
+    const text =
+      resp?.result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    async function insertReply() {
-      await client.set("comment", {
-        text: document.getElementById("reply-text").value,
-        public: false
-      });
-      alert("Inserted into internal note");
-    }
+    out.value = text || "No reply generated.";
+  } catch {
+    err.textContent = "Error generating reply.";
+  }
+};
+
+document.getElementById("btn-insert-reply").onclick = async () => {
+  const val = document.getElementById("reply-box").value;
+  if (!val) return;
+
+  await client.set("comment", { text: val, public: false });
+};
 
 
-    /* -------------------------------------------------------
-       DSS AUDITOR
-    --------------------------------------------------------*/
-    document.getElementById("btn-audit").onclick = runAudit;
-    document.getElementById("btn-save").onclick = saveAudit;
 
-    async function runAudit() {
-      const ticket = (await client.get('ticket')).ticket;
+/************************************************************
+ * 3️⃣ DSS AUDIT
+ ************************************************************/
+document.getElementById("btn-audit").onclick = async () => {
+  const out = document.getElementById("audit-output");
 
-      document.getElementById('ticket-summary').textContent =
-        `#${ticket.id}\n${ticket.subject}\n\n${ticket.description}`;
+  out.innerHTML = "<b>Running audit…</b>";
 
-      const prompt = `
-Perform DSS audit. Return JSON:
-{ "decision": "", "reason": "" }
-      `;
+  const ticket = (await client.get("ticket")).ticket;
 
-      let out;
-      try { out = await callHF(prompt); }
-      catch { out = await callGemini(prompt); }
+  // You can customize this prompt
+  const prompt = `
+Analyze this customer request for a refund.
 
-      let audit = {};
-      try { audit = JSON.parse(out.match(/\{[\s\S]*\}/)[0]); }
-      catch { audit = { decision: "UNKNOWN", reason: out }; }
+Ticket:
+${ticket.description}
 
-      window._lastAudit = audit;
+Return JSON:
+{
+"decision":"APPROVE/REJECT",
+"reason":"text"
+}
+  `.trim();
 
-      document.getElementById('audit-result').textContent =
-        `${audit.decision}\n${audit.reason}`;
-    }
+  const resp = await backend("gemini", { prompt });
 
-    async function saveAudit() {
-      if (!window._lastAudit) return alert("Run audit first");
+  const text =
+    resp?.result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
 
-      await fetch(CONFIG.SHEETS_PROXY, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sheetName: "VS output",
-          row: [
-            new Date().toISOString().slice(0,10),
-            window._lastAudit.decision,
-            window._lastAudit.reason
-          ]
-        })
-      });
+  out.innerHTML = `<pre>${text}</pre>`;
 
-      alert("Saved to Sheets");
-    }
-  </script>
+  window._audit = text; // store
+};
+
+
+document.getElementById("btn-save-audit").onclick = async () => {
+  const out = document.getElementById("audit-error");
+
+  if (!window._audit) {
+    out.textContent = "Run audit first.";
+    return;
+  }
+
+  await backend("saveAudit", {
+    sheetName: "VS output",
+    row: [
+      Date.now(), new Date().toISOString(),
+      window._audit, "", "", "", "", "", "", "", "", ""
+    ]
+  });
+
+  out.textContent = "Saved.";
+};
+
+
+/************************************************************
+ * INITIALIZE
+ ************************************************************/
+loadDeadline();
+</script>
 
 </body>
 </html>
