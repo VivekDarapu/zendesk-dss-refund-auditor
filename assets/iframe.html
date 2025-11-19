@@ -8,15 +8,14 @@
 <!-- Zendesk SDK -->
 <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
 
-<!-- Inter font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
   :root {
     --primary: #0066cc;
     --warning: #d97706;
     --error: #dc2626;
-    --success: #059669;
     --bg: #ffffff;
     --surface: #f9fafb;
     --border: #e5e7eb;
@@ -31,59 +30,38 @@
     background: var(--surface);
     font-family: Inter, sans-serif;
     font-size: 14px;
-    -webkit-font-smoothing: antialiased;
+    color: var(--text);
   }
 
   .container {
-    max-width: 1180px;
+    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
     padding: 24px;
   }
 
   .card {
     background: var(--bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
     padding: 20px;
     margin-bottom: 28px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow);
   }
 
   h2 {
-    margin: 0 0 16px 0;
+    margin: 0 0 14px 0;
     font-size: 18px;
     font-weight: 600;
-  }
-
-  .info {
-    margin: 6px 0;
-    color: var(--text-light);
-  }
-
-  .note {
-    margin-top: 12px;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 13px;
-  }
-
-  .note-warn {
-    background: #fff7e6;
-    border-left: 4px solid var(--warning);
-  }
-
-  .note-error {
-    background: #feeceb;
-    border-left: 4px solid var(--error);
   }
 
   textarea {
     width: 100%;
     min-height: 130px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
     padding: 10px;
     font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
   }
 
   button {
@@ -93,18 +71,22 @@
     cursor: pointer;
     margin-right: 8px;
     font-weight: 500;
-    font-size: 14px;
   }
 
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-secondary { background: #e5e7eb; color: #111; }
+
+  .info { margin: 4px 0; color: var(--text-light); }
+
+  .note {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
   }
 
-  .btn-secondary {
-    background: #e5e7eb;
-    color: #000;
-  }
+  .note-warn { background: #fff7e6; border-left: 4px solid var(--warning); }
+  .note-error { background: #feeceb; border-left: 4px solid var(--error); }
 </style>
 </head>
 
@@ -121,71 +103,73 @@
   <!-- REPLY GENERATOR -->
   <div class="card">
     <h2>Generate Reply</h2>
-
-    <textarea id="reply-box" placeholder="Click Generate Reply"></textarea>
-
-    <button class="btn-primary" id="btn-reply">Generate Reply</button>
+    <textarea id="reply-text" placeholder="Click Generate Reply"></textarea>
+    <button class="btn-primary" id="btn-generate-reply">Generate Reply</button>
     <button class="btn-secondary" id="btn-insert-reply">Insert Internal Note</button>
-
-    <div id="reply-error" style="margin-top:10px;color:var(--error)"></div>
+    <div id="reply-error" style="margin-top:8px;color:var(--error)"></div>
   </div>
 
   <!-- DSS AUDIT -->
   <div class="card">
     <h2>DSS Refund Audit</h2>
-
     <div id="audit-output"></div>
-    <button class="btn-primary" id="btn-audit">Run Audit</button>
+    <button class="btn-primary" id="btn-run-audit">Run Audit</button>
     <button class="btn-secondary" id="btn-save-audit">Send to Sheets</button>
-
-    <div id="audit-error" style="margin-top:10px;color:var(--error)"></div>
+    <div id="audit-error" style="margin-top:8px;color:var(--error)"></div>
   </div>
 
 </div>
 
 
 <script>
-/************************************************************
+/***********************************************************
  * CONFIG
- ************************************************************/
+ ***********************************************************/
 const client = ZAFClient.init();
-client.invoke('resize', { width: '100%', height: '900px' });
+client.invoke("resize", { width: "100%", height: "1000px" });
 
-/* Replace with your deployed Google Apps Script Web App URL */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx98b4iwSD0SklSFfAROjWISTxN954BUGcZK6NxhHA_rc8aHJeI63zHlJ5hg_2Z2BBPuQ/exec";
+// CHANGE THIS ONLY:
+const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
-/************************************************************
- * GENERIC BACKEND CALLER
- ************************************************************/
+
+/***********************************************************
+ * CALL BACKEND (Apps Script)
+ ***********************************************************/
 async function backend(action, payload = {}) {
-  const body = JSON.stringify({ action, ...payload });
-
   const res = await fetch(APPS_SCRIPT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ action, ...payload })
   });
-
   return await res.json();
 }
 
-/************************************************************
+
+/***********************************************************
+ * SAFE GEMINI TEXT EXTRACTOR
+ ***********************************************************/
+function extractGeminiText(resp) {
+  try {
+    return resp?.result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+
+/***********************************************************
  * 1️⃣ DEADLINE MONITOR
- ************************************************************/
+ ***********************************************************/
 async function loadDeadline() {
   const out = document.getElementById("deadline-output");
 
-  const fields = await client.get([
-    "ticket.customField:custom_field_360021522151", // City
-    "ticket.customField:custom_field_360024323231", // Tour Date
-    "ticket.customField:custom_field_360021522271", // Start Time
-    "ticket.customField:custom_field_360021520271"  // Completion Type
-  ]);
+  // Fetch ALL custom fields correctly
+  const cf = (await client.get("ticket.customFields"))["ticket.customFields"];
 
-  const city = fields["ticket.customField:custom_field_360021522151"];
-  const tourDate = fields["ticket.customField:custom_field_360024323231"];
-  const startTime = fields["ticket.customField:custom_field_360021522271"];
-  const completion = fields["ticket.customField:custom_field_360021520271"];
+  const city        = cf["custom_field_360021522151"];
+  const tourDate    = cf["custom_field_360024323231"];
+  const startTime   = cf["custom_field_360021522271"];
+  const completion  = cf["custom_field_360021520271"];
 
   if (completion) {
     out.innerHTML = "<b>Completion Type already set.</b><br>No action required.";
@@ -193,29 +177,27 @@ async function loadDeadline() {
   }
 
   if (!city || !tourDate || !startTime) {
-    out.innerHTML = "Missing City / Tour Date / Start Time fields";
+    out.innerHTML = "City / Tour Date / Start Time missing.";
     return;
   }
 
-  // ① Determine timezone via Gemini
-  const tzPrompt = `City or place: "${city}". Return ONLY the correct IANA timezone.`;
-  const tzResult = await backend("gemini", { prompt: tzPrompt });
+  // 1) Resolve timezone via Gemini
+  const tzResp = await backend("gemini", {
+    prompt: `City or place: "${city}". Return ONLY the correct IANA timezone.`
+  });
 
-  let timezone = "Asia/Kolkata";
-  try {
-    timezone = tzResult?.result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Asia/Kolkata";
-  } catch {}
+  let timezone = extractGeminiText(tzResp) || "Asia/Kolkata";
 
-  // ② Build full datetime
-  const fullString = `${tourDate} ${startTime}`;
-  const tourDT = new Date(fullString);
+  // 2) Compose datetime
+  const full = `${tourDate} ${startTime}`;
+  const tourDT = new Date(full);
 
-  // ③ Convert NOW → city time
-  const nowInCity = new Date(
+  // 3) Convert NOW → city timezone
+  const nowCity = new Date(
     new Date().toLocaleString("en-US", { timeZone: timezone })
   );
 
-  const diffMs = tourDT - nowInCity;
+  const diffMs = tourDT - nowCity;
   const diffMin = Math.floor(diffMs / 60000);
 
   let html = `
@@ -226,48 +208,41 @@ async function loadDeadline() {
     <div class="info"><b>Minutes to fulfill:</b> ${diffMin}</div>
   `;
 
-  // No action required case
+  // No action required
   if (diffMin > 15) {
     out.innerHTML = html + `<div class="note">No action required.</div>`;
     return;
   }
 
-  // Internal note already added?
-  const comments = await client.get("ticket.comments");
-  const alreadyAdded = comments["ticket.comments"].some(c =>
-    c.body.includes("experience time")
-  );
+  // Prevent duplicate internal notes
+  const comments = (await client.get("ticket.comments"))["ticket.comments"];
+  const alreadyAdded = comments.some(c => c.body.includes("experience time"));
   if (alreadyAdded) {
     out.innerHTML = html + `<div class="note">Internal note already added.</div>`;
     return;
   }
 
-  // Get ticket ID
   const ticketId = (await client.get("ticket.id"))["ticket.id"];
 
-  // CASE: 0 < diff ≤ 15
+  // <15 min (but not passed)
   if (diffMin > 0 && diffMin <= 15) {
-    const note = `
+    await addNote(ticketId, `
 The experience time is less than 15 minutes away.
 It will expire at ${startTime} (${timezone}).
 Please take the necessary action.
-    `.trim();
-
-    await addInternalNote(ticketId, note);
+    `.trim());
 
     out.innerHTML = html +
       `<div class="note note-warn">⚠️ Less than 15 minutes remaining.</div>`;
     return;
   }
 
-  // CASE: diff < 0
+  // Passed case
   if (diffMin < 0) {
-    const note = `
+    await addNote(ticketId, `
 The experience time has already passed.
 Please take the necessary action.
-    `.trim();
-
-    await addInternalNote(ticketId, note);
+    `.trim());
 
     out.innerHTML = html +
       `<div class="note note-error">⛔ Experience time has passed.</div>`;
@@ -275,119 +250,98 @@ Please take the necessary action.
   }
 }
 
-async function addInternalNote(ticketId, text) {
+async function addNote(ticketId, text) {
   return client.request({
     url: `/api/v2/tickets/${ticketId}.json`,
     method: "PUT",
     contentType: "application/json",
     data: JSON.stringify({
-      ticket: {
-        comment: { body: text, public: false }
-      }
+      ticket: { comment: { body: text, public: false }}
     })
   });
 }
 
 
-
-
-/************************************************************
+/***********************************************************
  * 2️⃣ GENERATE REPLY
- ************************************************************/
-document.getElementById("btn-reply").onclick = async () => {
-  const out = document.getElementById("reply-box");
+ ***********************************************************/
+document.getElementById("btn-generate-reply").onclick = async () => {
+  const out = document.getElementById("reply-text");
   const err = document.getElementById("reply-error");
   err.textContent = "";
 
   const ticket = (await client.get("ticket")).ticket;
-  const prompt = `
-You are a Zendesk agent. Based on this ticket description, write a helpful internal note.
 
-Ticket:
+  const prompt = `
+Write an internal note reply for this customer inquiry:
+
 ${ticket.description}
 
-Return ONLY the suggested reply text.
+Return ONLY the reply text.
   `.trim();
 
   const resp = await backend("gemini", { prompt });
-
-  try {
-    const text =
-      resp?.result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    out.value = text || "No reply generated.";
-  } catch {
-    err.textContent = "Error generating reply.";
-  }
+  out.value = extractGeminiText(resp) || "No reply generated.";
 };
 
 document.getElementById("btn-insert-reply").onclick = async () => {
-  const val = document.getElementById("reply-box").value;
-  if (!val) return;
-
-  await client.set("comment", { text: val, public: false });
+  const text = document.getElementById("reply-text").value;
+  if (!text) return;
+  await client.set("comment", { text, public:false });
 };
 
 
-
-/************************************************************
+/***********************************************************
  * 3️⃣ DSS AUDIT
- ************************************************************/
-document.getElementById("btn-audit").onclick = async () => {
+ ***********************************************************/
+document.getElementById("btn-run-audit").onclick = async () => {
   const out = document.getElementById("audit-output");
-
-  out.innerHTML = "<b>Running audit…</b>";
 
   const ticket = (await client.get("ticket")).ticket;
 
-  // You can customize this prompt
   const prompt = `
-Analyze this customer request for a refund.
+Analyze this customer’s refund request and return JSON like:
+{
+"decision":"APPROVE/REJECT",
+"reason":"..."
+}
 
 Ticket:
 ${ticket.description}
-
-Return JSON:
-{
-"decision":"APPROVE/REJECT",
-"reason":"text"
-}
   `.trim();
 
   const resp = await backend("gemini", { prompt });
-
-  const text =
-    resp?.result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+  const text = extractGeminiText(resp);
 
   out.innerHTML = `<pre>${text}</pre>`;
-
-  window._audit = text; // store
+  window._audit = text;
 };
 
-
 document.getElementById("btn-save-audit").onclick = async () => {
-  const out = document.getElementById("audit-error");
-
+  const err = document.getElementById("audit-error");
   if (!window._audit) {
-    out.textContent = "Run audit first.";
+    err.textContent = "Run audit first.";
     return;
   }
 
   await backend("saveAudit", {
-    sheetName: "VS output",
-    row: [
-      Date.now(), new Date().toISOString(),
-      window._audit, "", "", "", "", "", "", "", "", ""
+    sheetName:"VS output",
+    row:[
+      "BookingID",
+      new Date().toISOString(),
+      window._audit,
+      "", "", "", "", "", "", "", "", ""
     ]
   });
 
-  out.textContent = "Saved.";
+  err.style.color = "green";
+  err.textContent = "Saved to Google Sheets.";
 };
 
 
-/************************************************************
- * INITIALIZE
- ************************************************************/
+/***********************************************************
+ * INIT
+ ***********************************************************/
 loadDeadline();
 </script>
 
